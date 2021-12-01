@@ -3,7 +3,7 @@ entries:
   wekan:
   - apiVersion: v2
     appVersion: "5.83"
-    created: "2021-12-01T09:15:17.818529597+01:00"
+    created: "2021-12-01T09:18:11.688043499+01:00"
     dependencies:
     - condition: mongodb.enabled
       name: mongodb
@@ -27,6 +27,6 @@ entries:
     - https://github.com/wekan/wekan
     type: application
     urls:
-    - https://varac.github.io/wekan-charts/wekan-1.1.0.tgz
+    - https://wekan.github.io/charts/wekan-1.1.0.tgz
     version: 1.1.0
-generated: "2021-12-01T09:15:17.814746148+01:00"
+generated: "2021-12-01T09:18:11.684280782+01:00"
