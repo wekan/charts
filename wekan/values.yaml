@@ -122,8 +122,6 @@ mongodb:
   replicaSetName: rs0
   auth:
     enabled: false
-  # Note: Should be set to "Recreate" on ReadWriteOnce storage
-  strategyType: RollingUpdate
   # Optional specify an existing PVC
   persistence:
     existingClaim: ""
