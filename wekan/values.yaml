@@ -38,7 +38,7 @@ secretEnv: {}
   #   value: ""
 
 service:
-  type: NodePort
+  type: ClusterIP
   port: 8080
   annotations: {}
     # prometheus.io/scrape: "true"
@@ -55,7 +55,7 @@ ingress:
   annotations: {}
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
-  path: /*
+  path: /
   pathtype: ImplementationSpecific
   # This must match 'endpoint', unless your client supports different
   # hostnames.
@@ -112,6 +112,7 @@ podLabels: {}
 
 # ------------------------------------------------------------------------------
 # MongoDB:
+# ref: https://github.com/bitnami/charts/blob/master/bitnami/mongodb/values.yaml
 # ------------------------------------------------------------------------------
 
 mongodb:
@@ -121,3 +122,8 @@ mongodb:
   replicaSetName: rs0
   auth:
     enabled: false
+  # Note: Should be set to "Recreate" on ReadWriteOnce storage
+  strategyType: RollingUpdate
+  # Optional specify an existing PVC
+  persistence:
+    existingClaim: ""
