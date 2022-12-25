@@ -11,8 +11,6 @@ icon: https://wekan.github.io/wekan-logo.svg
 keywords:
   - kanban
 maintainers:
-  - email: x@xet7.org
-    name: xet7
   - email: github@randall.cc
     name: technotaff
   - email: jiangyt.cn@gmail.com
@@ -23,4 +21,4 @@ name: wekan
 sources:
   - https://github.com/wekan/wekan
 type: application
-version: 1.1.1
+version: 1.1.2
