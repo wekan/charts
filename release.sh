@@ -8,10 +8,10 @@ if [ $# -ne 1 ]
 fi
 
 cd wekan
-microk8s.helm dependency update
+helm dependency update
 cd ..
 git add --all
-git commit -m "Updated dependencies."
+git commit -m "$1"
 git push
 tar -cvzf wekan-$1.tgz wekan
 mv wekan-$1.tgz ..
