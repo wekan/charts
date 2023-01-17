@@ -9,6 +9,7 @@ fi
 
 cd wekan
 helm dependency update
+helm dependency build
 cd ..
 git add --all
 git commit -m "$1"
@@ -18,4 +19,3 @@ mv wekan-$1.tgz ..
 git checkout gh-pages
 mv ../wekan-$1.tgz .
 echo "Update release sha256sum to release list."
-helm dependency build
