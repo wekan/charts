@@ -33,7 +33,6 @@ entries:
     urls:
     - https://wekan.github.io/charts/wekan-1.1.8.tgz
     version: 1.1.8
-  wekan:
   - apiVersion: v2
     appVersion: "6.70"
     created: "2023-01-14T00:21:19.352513218+02:00"
