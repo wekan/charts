@@ -35,7 +35,7 @@ env:
 ##
 secretEnv: {}
   # - name: ""
-  #   value: ""
+  ##  value: ""
 
 service:
   type: ClusterIP

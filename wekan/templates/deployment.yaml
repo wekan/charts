@@ -50,13 +50,11 @@ spec:
           {{- end }}
           {{- end }}
           {{- range $key := .Values.secretEnv }}
-          {{- if .value }}
             - name: {{ .name }}
               valueFrom:
                 secretKeyRef:
                   name: {{ template "wekan.fullname" $ }}-secret
                   key: {{ .name }}
-          {{- end }}
           {{- end }}
           livenessProbe:
             httpGet:
