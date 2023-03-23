@@ -61,9 +61,9 @@ spec:
               path: /
               port: 8080
             initialDelaySeconds: 60
-          {{ if .Values.cacheFolder.enabled }}
+          {{ if .Values.sharedDataFolder.enabled }}
           volumeMounts:
-            - name: cache-volume
+            - name: shared-data-volume
               mountPath: /data
           {{ end }}
           resources:
@@ -80,10 +80,9 @@ spec:
       tolerations:
 {{ toYaml . | indent 8 }}
     {{- end }}
-      {{ if .Values.cacheFolder.enabled }}
+      {{ if .Values.sharedDataFolder.enabled }}
       volumes:
-      - name: cache-volume
-        emptyDir:
-          medium: "Memory"
-          sizeLimit: {{ .Values.cacheFolder.storage }}
+      - name: shared-data-volume
+        persistentVolumeClaim:
+          claimName: {{ template "wekan.fullname" . }}-shared-data
       {{ end }}
