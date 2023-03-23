@@ -110,11 +110,14 @@ deploymentLabels: {}
 # Optional custom labels for the pods created by the deployment.
 podLabels: {}
 
-# That cache folder (/data) is required to move attachments between MongoDB GridFS and filesystem.
-# Without that setting WeKan does not work properly
-cacheFolder:
+sharedDataFolder:
   enabled: true
-  storage: 64Mi
+  path: /data
+  accessMode: ReadWriteOnce
+  storageClass: 
+  resources:
+    requests:
+      storage: 5Gi
 
 # ------------------------------------------------------------------------------
 # MongoDB:
