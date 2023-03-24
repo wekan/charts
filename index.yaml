@@ -3,6 +3,38 @@ entries:
   wekan:
   - apiVersion: v2
     appVersion: "6.80"
+    created: "2023-03-24T21:28:28.352513218+02:00"
+    dependencies:
+    - condition: mongodb.enabled
+      name: mongodb
+      repository: https://charts.bitnami.com/bitnami
+      version: 13.6.x
+    description: Open Source kanban
+    digest: 5220d66d3828284b7b86ad719de64f5ffff5b2fbc775f34ddca66b009c71fe99
+    home: https://wekan.github.io
+    icon: https://wekan.github.io/wekan-logo.svg
+    keywords:
+    - kanban
+    maintainers:
+    - email: support@wekan.team
+      name: wekan
+    - email: x@xet7.org
+      name: xet7
+    - email: github@randall.cc
+      name: technotaff
+    - email: jiangyt.cn@gmail.com
+      name: jiangytcn
+    - email: varac@varac.net
+      name: varac
+    name: wekan
+    sources:
+    - https://github.com/wekan/wekan
+    type: application
+    urls:
+    - https://wekan.github.io/charts/wekan-1.2.7.tgz
+    version: 1.2.7
+  - apiVersion: v2
+    appVersion: "6.80"
     created: "2023-03-23T22:44:44.352513218+02:00"
     dependencies:
     - condition: mongodb.enabled
