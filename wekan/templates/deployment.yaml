@@ -30,6 +30,13 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
+      initContainers:
+        - name: volume-permissions
+          image: busybox
+          command: ['sh', '-c', 'chown -R 999:999 /data']
+          volumeMounts:
+            - name: shared-data-volume
+              mountPath: /data
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
