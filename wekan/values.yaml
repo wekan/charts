@@ -13,7 +13,7 @@ serviceAccounts:
 ## Wekan image configuration
 ##
 image:
-  repository: quay.io/wekan/wekan
+  repository: ghcr.io/wekan/wekan
   tag: v6.89
   pullPolicy: IfNotPresent
 
