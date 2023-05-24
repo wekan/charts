@@ -14,7 +14,7 @@ serviceAccounts:
 ##
 image:
   repository: ghcr.io/wekan/wekan
-  tag: v6.89
+  tag: v6.90
   pullPolicy: IfNotPresent
 
 ## Configuration for wekan component
@@ -114,7 +114,7 @@ sharedDataFolder:
   enabled: true
   path: /data
   accessMode: ReadWriteOnce
-  storageClass: 
+  storageClass:
   resources:
     requests:
       storage: 5Gi
