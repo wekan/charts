@@ -10,7 +10,7 @@ entries:
       repository: https://charts.bitnami.com/bitnami
       version: 13.6.x
     description: Open Source kanban
-    digest: 1c6f77c2fb7147f52c724e54e0a1ec0a252201105701ed015f7d4583df133574
+    digest: a9f38d029c7a0616b4be1f6c50e88a28e9a052f77adaf96cfaf37d0e78f86b87
     home: https://wekan.github.io
     icon: https://wekan.github.io/wekan-logo.svg
     keywords:
