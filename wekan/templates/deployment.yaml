@@ -30,6 +30,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
+      {{- if ne .Values.platform "openshift" }}
       initContainers:
         - name: volume-permissions
           image: busybox
@@ -37,6 +38,7 @@ spec:
           volumeMounts:
             - name: shared-data-volume
               mountPath: /data
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
