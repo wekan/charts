@@ -2,7 +2,7 @@
 # Wekan:
 # ------------------------------------------------------------------------------
 ## Define platform where helm chart is deployed (set to 'openshift' to disable initContainer with chown command) 
-#platform: openshift
+platform: kubernetes
 
 ## Define serviceAccount names to create or use. Defaults to component's fully
 ## qualified name.
