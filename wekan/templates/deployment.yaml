@@ -48,8 +48,16 @@ spec:
           env:
             - name: ROOT_URL
               value: {{ .Values.root_url | default "https://wekan.local" | quote }}
+          {{- $mongo_url_is_secret := false }}
+          {{- range $key := .Values.secretEnv }}
+            {{- if eq .name "MONGO_URL" }}
+              {{- $mongo_url_is_secret = true }}
+            {{- end }}
+          {{- end }}
+          {{- if not $mongo_url_is_secret }}
             - name: MONGO_URL
               value: "{{ template "mongodb.url" . }}"
+          {{- end }}
           {{- range $key := .Values.env }}
           {{- if .value }}
             - name: {{ .name }}
