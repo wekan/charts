@@ -34,6 +34,7 @@ spec:
       initContainers:
         - name: volume-permissions
           image: busybox
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ['sh', '-c', 'chown -R 999:999 /data']
           volumeMounts:
             - name: shared-data-volume
