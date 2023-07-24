@@ -52,6 +52,11 @@ service:
 ##
 endpoint: wekan.local
 
+## Main URL (including http:// or https://) where your Wekan
+## instance is accessible
+##
+root_url: https://wekan.local
+
 ingress:
   enabled: true
   annotations: {}
