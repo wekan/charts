@@ -31,6 +31,12 @@ env:
   - name: ""
     value: ""
 
+# Additional environment variables for Wekan mapped from Secret or ConfigMap
+extraEnvFrom: ""
+# extraEnvFrom: |
+#    - secretRef:
+#        name: "{{ template "wekan.fullname" $ }}-test-secret"
+
 ## Specify additional secret environmental variables for the
 ## Deployment. These can e.g. be provided by a Secret and allow
 ## to store passwords separately

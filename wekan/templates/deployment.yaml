@@ -74,6 +74,10 @@ spec:
                   name: {{ template "wekan.fullname" $ }}-secret
                   key: {{ .name }}
           {{- end }}
+          envFrom:
+            {{- with .Values.extraEnvFrom }}
+            {{- tpl . $ | nindent 10 }}
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /
