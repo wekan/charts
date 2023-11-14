@@ -47,7 +47,7 @@ spec:
           terminationMessagePolicy: FallbackToLogsOnError
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ .Values.service.port }}
           env:
             - name: ROOT_URL
               value: {{ .Values.root_url | quote }}
@@ -78,10 +78,15 @@ spec:
             {{- with .Values.extraEnvFrom }}
             {{- tpl . $ | nindent 10 }}
             {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 20
           livenessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: {{ .Values.service.port }}
             initialDelaySeconds: 60
           {{ if .Values.sharedDataFolder.enabled }}
           volumeMounts:
