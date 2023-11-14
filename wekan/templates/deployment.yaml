@@ -30,7 +30,6 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
-      {{- if ne .Values.platform "openshift" }}
       initContainers:
         - name: volume-permissions
           image: busybox
@@ -39,7 +38,6 @@ spec:
           volumeMounts:
             - name: shared-data-volume
               mountPath: /data
-      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -47,7 +45,7 @@ spec:
           terminationMessagePolicy: FallbackToLogsOnError
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ .Values.service.port }}
           env:
             - name: ROOT_URL
               value: {{ .Values.root_url | quote }}
@@ -78,16 +76,16 @@ spec:
             {{- with .Values.extraEnvFrom }}
             {{- tpl . $ | nindent 10 }}
             {{- end }}
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 8080
-            initialDelaySeconds: 60
           readinessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: {{ .Values.service.port }}
             initialDelaySeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 60
           {{ if .Values.sharedDataFolder.enabled }}
           volumeMounts:
             - name: shared-data-volume
