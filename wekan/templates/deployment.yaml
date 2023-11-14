@@ -83,6 +83,11 @@ spec:
               path: /
               port: 8080
             initialDelaySeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 20
           {{ if .Values.sharedDataFolder.enabled }}
           volumeMounts:
             - name: shared-data-volume
