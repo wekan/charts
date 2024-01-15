@@ -132,6 +132,7 @@ sharedDataFolder:
     requests:
       storage: 5Gi
 
+extraDeploy: []
 # ------------------------------------------------------------------------------
 # MongoDB:
 # ref: https://github.com/bitnami/charts/blob/master/bitnami/mongodb/values.yaml
