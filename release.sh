@@ -8,8 +8,9 @@ if [ $# -ne 1 ]
 fi
 
 cd wekan
-helm dependency update
-helm dependency build
+sudo snap install helm
+/snap/bin/helm dependency update
+/snap/bin/helm dependency build
 cd ..
 git add --all
 git commit -m "$1"
