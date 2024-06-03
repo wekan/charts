@@ -9,6 +9,7 @@ fi
 
 cd wekan
 sudo snap install helm
+/snap/bin/helm repo add mongo https://charts.bitnami.com/bitnami
 /snap/bin/helm dependency update
 /snap/bin/helm dependency build
 cd ..
