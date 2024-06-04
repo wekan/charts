@@ -77,12 +77,16 @@ else use user-provided URL.
 */}}
 {{- define "mongodb.url" -}}
 {{- if (index .Values "mongodb" "enabled") -}}
-{{- $count := (int (index .Values "mongodb" "replicaCount")) -}}
-{{- $release := .Release.Name -}}
-{{- $replicaSetName := (index .Values "mongodb" "replicaSetName") -}}
-{{- $mongodbSvcName := include "wekan.mongodb.svcname" . -}}
-mongodb://{{- range $v := until $count }}{{ $release }}-mongodb-{{ $v }}.{{ $mongodbSvcName }}:27017{{ if ne $v (sub $count 1) }},{{- end -}}{{- end -}}/{{ .Values.dbname }}?replicaSet={{ $replicaSetName }}
+  {{- $count := (int (index .Values "mongodb" "replicaCount")) -}}
+  {{- $release := .Release.Name -}}
+  {{- $mongodbSvcName := include "wekan.mongodb.svcname" . -}}
+  {{- if gt $count 1 -}}
+    {{- $replicaSetName := (index .Values "mongodb" "replicaSetName") -}}
+    mongodb://{{- range $v := until $count }}{{ $release }}-mongodb-{{ $v }}.{{ $mongodbSvcName }}:27017{{ if ne $v (sub $count 1) }},{{- end -}}{{- end -}}/{{ .Values.dbname }}?replicaSet={{ $replicaSetName }}
+  {{- else -}}
+    mongodb://{{ $release }}-mongodb-0.{{ $mongodbSvcName }}:27017/{{ .Values.dbname }}
+  {{- end -}}
 {{- else -}}
-{{- index .Values "mongodb" "url" -}}
+  {{- index .Values "mongodb" "url" -}}
 {{- end -}}
 {{- end -}}
