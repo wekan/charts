@@ -25,4 +25,4 @@ name: wekan
 sources:
   - https://github.com/wekan/wekan
 type: application
-version: 7.52.0-resources.0
+version: 7.51.0
