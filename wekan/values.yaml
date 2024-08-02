@@ -27,9 +27,10 @@ dbname: wekan
 
 ## Specify additional environmental variables for the Deployment
 ##
+## https://github.com/wekan/charts/issues/34
 env:
-  - name: ""
-    value: ""
+  - name: "MONGO_URL"
+    value: "mongodb://wekan-mongodb:27017"
 
 # Additional environment variables for Wekan mapped from Secret or ConfigMap
 extraEnvFrom: ""
@@ -147,9 +148,12 @@ extraDeploy: []
 
 mongodb:
   enabled: true
-  architecture: replicaset
-  replicaCount: 3
-  replicaSetName: rs0
+  architecture: standalone
+  useStatefulSet: false
+  # https://github.com/wekan/charts/issues/34
+  #architecture: replicaset
+  #replicaCount: 3
+  #replicaSetName: rs0
   auth:
     enabled: false
   # Optional specify an existing PVC
