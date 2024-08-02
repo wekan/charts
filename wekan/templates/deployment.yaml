@@ -41,6 +41,8 @@ spec:
           volumeMounts:
             - name: shared-data-volume
               mountPath: /data
+          resources:
+{{ toYaml .Values.init.resources | indent 12 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
