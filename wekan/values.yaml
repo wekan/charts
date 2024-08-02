@@ -64,6 +64,21 @@ endpoint: wekan.local
 ##
 root_url: https://wekan.local
 
+## Note: WeKan is usually run at subdomain. Using a subpath is not tested.
+## https://github.com/wekan/charts/issues/30
+## If configuring the Helm values to run wekan under a subpath,
+## the readiness and liveliness probes are still configured
+## to call the root path /. This returns a 404 Not Found and
+## results in the probe(s) failing, which ultimately results in Kubernetes killing the pod.
+##
+## Relevent config:
+##
+##  endpoint: yourcompany.com
+##  root_url: https://yourcompany.com/wekan
+##  ingress:
+##    path: /wekan
+##    hosts: [ yourcompany.com ]
+
 ingress:
   enabled: true
   annotations: {}
