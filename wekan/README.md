@@ -100,3 +100,27 @@ instead of ingress with following command:
 helm template --set route.enabled=true,ingress.enabled=false values.yaml . | \
   oc apply -f-
 ```
+
+# Install with Local Image Registry
+
+To utilize a local Image Registry, configure the following values to point to your local registry:
+
+```yaml
+image:
+  repository: ghcr.io/wekan/wekan
+init:
+  image:
+    repository: docker.io/busybox
+test:
+  image:
+    repository: docker.io/busybox
+```
+
+Additionally, set the Bitnami defaultRegistry to use your local docker.io mirror with the following snippet:
+
+```yaml
+global:
+  imageRegistry: "<your docker.io mirror goes here>"
+```
+
+This setup will ensure that all images are pulled from your specified local registry, optimizing performance and reliability for your deployment environment.

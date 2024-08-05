@@ -13,7 +13,7 @@ metadata:
 spec:
   containers:
     - name: wget
-      image: busybox
+      image: "{{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}"
       command: ['wget', '-O', '/dev/stdout']
       args: ['{{ template "wekan.fullname" . }}:{{ .Values.service.port }}']
   restartPolicy: Never

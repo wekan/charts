@@ -35,8 +35,8 @@ spec:
       {{- if ne .Values.platform "openshift" }}
       initContainers:
         - name: volume-permissions
-          image: busybox
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}"
+          imagePullPolicy: {{ .Values.init.image.pullPolicy }}
           command: ['sh', '-c', 'chown -R 999:999 /data']
           volumeMounts:
             - name: shared-data-volume

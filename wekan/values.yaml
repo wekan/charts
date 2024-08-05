@@ -107,6 +107,10 @@ resources:
     cpu: 500m
 
 init:
+  image:
+    repository: docker.io/busybox
+    tag: latest
+    pullPolicy: IfNotPresent
   resources:
     requests:
       memory: 128Mi
@@ -115,6 +119,10 @@ init:
       memory: 256Mi
       cpu: 100m
 
+test:
+  image:
+    repository: docker.io/busybox
+    tag: latest
 ## Node labels for pod assignment
 ## ref: https://kubernetes.io/docs/user-guide/node-selection/
 ##
