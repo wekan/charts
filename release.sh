@@ -3,7 +3,7 @@
 if [ $# -ne 1 ]
   then
     echo "Syntax with Wekan version number:"
-    echo "  ./release.sh 1.1.4"
+    echo "  ./release.sh 7.10"
     exit 1
 fi
 
@@ -14,7 +14,7 @@ sudo snap install helm
 /snap/bin/helm dependency build
 cd ..
 git add --all
-git commit -m "$1"
+git commit -m "$1.0"
 git push
 tar -cvzf wekan-$1.tgz wekan
 mv wekan-$1.tgz ..
