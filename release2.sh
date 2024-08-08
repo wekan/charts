@@ -8,7 +8,7 @@
 if [ $# -ne 1 ]
   then
     echo "Syntax with Wekan version number:"
-    echo "  ./release.sh 5.10"
+    echo "  ./release.sh 7.10"
     exit 1
 fi
 
