@@ -4,7 +4,7 @@ dependencies:
   - condition: mongodb.enabled
     name: mongodb
     repository: https://charts.bitnami.com/bitnami
-    version: 13.6.x
+    version: 15.6.x
 description: Open Source kanban
 home: https://wekan.github.io
 icon: https://wekan.github.io/wekan-logo.svg
