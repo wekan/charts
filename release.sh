@@ -8,6 +8,7 @@ if [ $# -ne 1 ]
 fi
 
 cd wekan
+sudo apt -y install snapd
 sudo snap install helm
 /snap/bin/helm repo add mongo https://charts.bitnami.com/bitnami
 /snap/bin/helm dependency update
