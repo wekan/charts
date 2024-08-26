@@ -17,8 +17,8 @@ cd ..
 git add --all
 git commit -m "$1.0"
 git push
-tar -cvzf wekan-$1.tgz wekan
-mv wekan-$1.tgz ..
+tar -cvzf wekan-$1.0.tgz wekan
+mv wekan-$1.0.tgz ..
 git checkout gh-pages
-mv ../wekan-$1.tgz .
+mv ../wekan-$1.0.tgz .
 echo "Update release sha256sum to release list."
