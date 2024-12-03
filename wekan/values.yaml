@@ -107,6 +107,7 @@ resources:
     cpu: 500m
 
 init:
+  enabled: true
   image:
     repository: docker.io/busybox
     tag: latest
@@ -118,6 +119,7 @@ init:
     limits:
       memory: 256Mi
       cpu: 100m
+  securityContext: {}
 
 test:
   image:
@@ -171,6 +173,9 @@ updateStrategy:
   rollingUpdate:
     maxUnavailable: 1
     maxSurge: 1
+
+podSecurityContext: {}
+securityContext: {}
 
 extraDeploy: []
 # ------------------------------------------------------------------------------
