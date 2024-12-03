@@ -32,6 +32,7 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccounts.automount }}
       {{- if ne .Values.platform "openshift" }}
       initContainers:
         - name: volume-permissions

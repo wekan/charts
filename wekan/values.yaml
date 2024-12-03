@@ -11,6 +11,7 @@ serviceAccounts:
   create: true
   name: ""
   annotations: ""
+  automount: false
 
 ## Wekan image configuration
 ##
