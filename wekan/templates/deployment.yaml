@@ -32,7 +32,9 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
-      {{- if ne .Values.platform "openshift" }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if and (ne .Values.platform "openshift") (.Values.init.enabled) }}
       initContainers:
         - name: volume-permissions
           image: "{{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}"
@@ -42,7 +44,9 @@ spec:
             - name: shared-data-volume
               mountPath: /data
           resources:
-{{ toYaml .Values.init.resources | indent 12 }}
+            {{- toYaml .Values.init.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.init.podSecurityContext | nindent 12 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -92,6 +96,8 @@ spec:
               path: /
               port: {{ .Values.service.port }}
             initialDelaySeconds: 60
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           {{ if .Values.sharedDataFolder.enabled }}
           volumeMounts:
             - name: shared-data-volume
