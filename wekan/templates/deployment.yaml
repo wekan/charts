@@ -32,9 +32,8 @@ spec:
         {{- end }}
     spec:
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if and (ne .Values.platform "openshift") (.Values.init.enabled) }}
+      automountServiceAccountToken: {{ .Values.serviceAccounts.automount }}
+      {{- if ne .Values.platform "openshift" }}
       initContainers:
         - name: volume-permissions
           image: "{{ .Values.init.image.repository }}:{{ .Values.init.image.tag }}"
