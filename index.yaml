@@ -2,15 +2,15 @@ apiVersion: v1
 entries:
   wekan:
   - apiVersion: v2
-    appVersion: "7.70.0"
-    created: "2024-12-04T18:50:00.352513218+02:00"
+    appVersion: "7.71.0"
+    created: "2024-12-05T14:50:00.352513218+02:00"
     dependencies:
     - condition: mongodb.enabled
       name: mongodb
       repository: https://charts.bitnami.com/bitnami
       version: 15.6.x
     description: Open Source kanban
-    digest: 4db82b5efb83bc579746437b05c9c7545f4f402fc34ad955fd17b84d3ea85593
+    digest: bc7dd9356b4807044546c8d0c4901f4a2b870e5d29f69a1185ea50784fc30fac
     home: https://wekan.github.io
     icon: https://wekan.github.io/wekan-logo.svg
     keywords:
@@ -31,8 +31,8 @@ entries:
     - https://github.com/wekan/wekan
     type: application
     urls:
-    - https://wekan.github.io/charts/wekan-7.70.0.tgz
-    version: 7.70.0
+    - https://wekan.github.io/charts/wekan-7.71.0.tgz
+    version: 7.71.0
   - apiVersion: v2
     appVersion: "7.69.0"
     created: "2024-12-02T08:30:00.352513218+02:00"
