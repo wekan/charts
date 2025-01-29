@@ -46,6 +46,8 @@ extraEnvFrom: ""
 secretEnv: {}
   # - name: ""
   ##  value: ""
+## Secret created by Helm if true, or managed externally if false
+secretManaged: true
 
 service:
   type: ClusterIP
