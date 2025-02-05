@@ -31,6 +31,8 @@ spec:
         {{- toYaml .Values.podLabels | nindent 8 }}
         {{- end }}
     spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       serviceAccountName: {{ template "wekan.serviceAccountName" . }}
       automountServiceAccountToken: {{ .Values.serviceAccounts.automount }}
       {{- if ne .Values.platform "openshift" }}
