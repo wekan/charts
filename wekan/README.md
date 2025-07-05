@@ -75,6 +75,27 @@ Horizontal Pod Autoscaler (HPA).
 scale-out the number of Wekan pods.
 
 ```yaml
+# Optional custom labels for the pods created by the deployment.
+podLabels: {}
+
+# Optional custom annotations for the pods created by the deployment.
+podAnnotations: {}
+```
+
+**podLabels:** These are custom labels that will be applied to the Wekan pods.
+
+**podAnnotations:** These are custom annotations that will be applied to the Wekan pods.
+This can be useful for integrating with monitoring systems, service meshes, or other Kubernetes tools.
+
+```yaml
+mongodb:
+  # Optional custom annotations for the MongoDB pods
+  podAnnotations: {}
+```
+
+**podAnnotations:** These are custom annotations that will be applied to the MongoDB pods.
+
+```yaml
 mongodb-replicaset:
   enabled: true
   replicas: 3
