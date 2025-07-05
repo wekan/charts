@@ -161,6 +161,9 @@ deploymentLabels: {}
 # Optional custom labels for the pods created by the deployment.
 podLabels: {}
 
+# Optional custom annotations for the pods created by the deployment.
+podAnnotations: {}
+
 sharedDataFolder:
   enabled: true
   path: /data
@@ -199,3 +202,5 @@ mongodb:
   # Optional specify an existing PVC
   persistence:
     existingClaim: ""
+  # Optional custom annotations for the MongoDB pods
+  podAnnotations: {}
