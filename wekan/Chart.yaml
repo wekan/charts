@@ -6,12 +6,12 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
     version: 15.6.x
 description: Open Source kanban
-home: https://wekan.github.io
-icon: https://wekan.github.io/wekan-logo.svg
+home: https://wekan.fi
+icon: https://wekan.fi/wekan-logo.svg
 keywords:
   - kanban
 maintainers:
-  - email: support@wekan.team
+  - email: support@wekan.fi
     name: wekan
   - email: x@xet7.org
     name: xet7
