@@ -11,12 +11,12 @@ entries:
       version: 15.6.x
     description: Open Source kanban
     digest: 4b147c2b556a7b1b507ab1bbbf562a89373b0c8f1f3f1e705475ae7d8ed5f1f5
-    home: https://wekan.github.io
-    icon: https://wekan.github.io/wekan-logo.svg
+    home: https://wekan.fi
+    icon: https://wekan.fi/wekan-logo.svg
     keywords:
     - kanban
     maintainers:
-    - email: support@wekan.team
+    - email: support@wekan.fi
       name: wekan
     - email: x@xet7.org
       name: xet7
