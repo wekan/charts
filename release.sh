@@ -10,7 +10,7 @@ fi
 cd wekan
 sudo apt -y install snapd
 sudo snap install helm --classic
-/snap/bin/helm repo add mongo https://charts.bitnami.com/bitnami
+/snap/bin/helm repo add mongo https://groundhog2k.github.io/helm-charts/
 /snap/bin/helm dependency update
 /snap/bin/helm dependency build
 cd ..

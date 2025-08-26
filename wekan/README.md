@@ -137,11 +137,12 @@ test:
     repository: docker.io/busybox
 ```
 
-Additionally, set the Bitnami defaultRegistry to use your local docker.io mirror with the following snippet:
+Additionally, set the mongodb chart to use your local docker.io mirror with the following snippet:
 
 ```yaml
-global:
-  imageRegistry: "<your docker.io mirror goes here>"
+mongodb:
+  image:
+    registry: "<your docker.io mirror goes here>"
 ```
 
 This setup will ensure that all images are pulled from your specified local registry, optimizing performance and reliability for your deployment environment.
