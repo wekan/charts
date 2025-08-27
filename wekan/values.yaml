@@ -186,21 +186,23 @@ securityContext: {}
 extraDeploy: []
 # ------------------------------------------------------------------------------
 # MongoDB:
-# ref: https://github.com/bitnami/charts/blob/master/bitnami/mongodb/values.yaml
+# ref: https://github.com/groundhog2k/helm-charts/tree/master/charts/mongodb
 # ------------------------------------------------------------------------------
 
 mongodb:
   enabled: true
-  architecture: standalone
-  useStatefulSet: false
-  # https://github.com/wekan/charts/issues/34
-  #architecture: replicaset
-  #replicaCount: 3
-  #replicaSetName: rs0
-  auth:
-    enabled: false
-  # Optional specify an existing PVC
-  persistence:
-    existingClaim: ""
-  # Optional custom annotations for the MongoDB pods
-  podAnnotations: {}
+  image:
+    # At the time of writing the mongodb chart defaults to version 8, but WeKan
+    # needs 7.
+    tag: 7.0.23
+  # settings:
+  #   rootUsername: admin
+  #   rootPassword:
+  # userDatabase:
+  #   name:
+  #   user:
+  #   password:
+  storage:
+    requestedSize: 2Gi
+    # Optional specify an existing PVC. If you do, unset the `requestedSize`.
+    # persistentVolumeClaimName:

@@ -1,6 +1,6 @@
 dependencies:
 - name: mongodb
-  repository: https://charts.bitnami.com/bitnami
-  version: 15.6.26
-digest: sha256:592ddf5b1a3882411357ab855f425f16a9da38ec3d8de995c00d6df0d6a3be73
-generated: "2024-09-23T22:29:27.309156259+03:00"
+  repository: https://groundhog2k.github.io/helm-charts/
+  version: 0.7.2
+digest: sha256:926e511d436231ce4219f96be289a87b9dc9574dd833254f4deda5f5d2d793d0
+generated: "2025-08-26T12:20:15.667163255+02:00"

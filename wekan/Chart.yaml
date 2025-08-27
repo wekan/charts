@@ -3,8 +3,8 @@ appVersion: "7.94"
 dependencies:
   - condition: mongodb.enabled
     name: mongodb
-    repository: https://charts.bitnami.com/bitnami
-    version: 15.6.x
+    repository: https://groundhog2k.github.io/helm-charts/
+    version: 0.7.2
 description: Open Source kanban
 home: https://wekan.fi
 icon: https://wekan.fi/wekan-logo.svg
