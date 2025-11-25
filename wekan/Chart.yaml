@@ -4,7 +4,7 @@ dependencies:
   - condition: mongodb.enabled
     name: mongodb
     repository: https://groundhog2k.github.io/helm-charts/
-    version: 0.7.2
+    version: 0.7.6
 description: Open Source kanban
 home: https://wekan.fi
 icon: https://wekan.fi/wekan-logo.svg
