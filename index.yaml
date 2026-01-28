@@ -2,6 +2,38 @@ apiVersion: v1
 entries:
   wekan:
   - apiVersion: v2
+    appVersion: "8.25.0"
+    created: "2026-01-28T22:00:00.352513218+02:00"
+    dependencies:
+    - condition: mongodb.enabled
+      name: mongodb
+      repository: https://groundhog2k.github.io/helm-charts/
+      version: 0.7.2
+    description: Open Source kanban
+    digest: 771ad0f78a6c379458c2f9e88da522cd61f9f31a17892464f90b5c75bfc91f96
+    home: https://wekan.fi
+    icon: https://wekan.fi/wekan-logo.svg
+    keywords:
+    - kanban
+    maintainers:
+    - email: support@wekan.fi
+      name: wekan
+    - email: x@xet7.org
+      name: xet7
+    - email: github@randall.cc
+      name: technotaff
+    - email: jiangyt.cn@gmail.com
+      name: jiangytcn
+    - email: varac@varac.net
+      name: varac
+    name: wekan
+    sources:
+    - https://github.com/wekan/wekan
+    type: application
+    urls:
+    - https://wekan.github.io/charts/wekan-8.25.0.tgz
+    version: 8.25.0
+  - apiVersion: v2
     appVersion: "8.24.0"
     created: "2026-01-24T04:00:00.352513218+02:00"
     dependencies:
