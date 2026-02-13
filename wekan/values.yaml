@@ -194,7 +194,7 @@ mongodb:
   image:
     # At the time of writing the mongodb chart defaults to version 8, but WeKan
     # needs 7.
-    tag: 7.0.29
+    tag: 7.0.30
   # settings:
   #   rootUsername: admin
   #   rootPassword:
