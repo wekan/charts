@@ -91,15 +91,13 @@ spec:
             {{- tpl . $ | nindent 10 }}
             {{- end }}
           readinessProbe:
-            httpGet:
-              path: /
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 20
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
           livenessProbe:
-            httpGet:
-              path: /
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 60
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- if .Values.startupProbe.enabled }}
+          startupProbe:
+            {{- omit .Values.startupProbe "enabled" | toYaml | nindent 12 }}
+          {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           {{ if .Values.sharedDataFolder.enabled }}
