@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: "9.01"
+appVersion: "9.02"
 dependencies:
   - condition: mongodb.enabled
     name: mongodb
@@ -25,4 +25,4 @@ name: wekan
 sources:
   - https://github.com/wekan/wekan
 type: application
-version: 9.01.0
+version: 9.02.0
