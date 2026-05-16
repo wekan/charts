@@ -17,7 +17,7 @@ serviceAccounts:
 ##
 image:
   repository: ghcr.io/wekan/wekan
-  tag: v9.19
+  tag: v9.20
   pullPolicy: IfNotPresent
 
 ## Configuration for wekan component
@@ -33,11 +33,17 @@ env:
   - name: "MONGO_URL"
     value: "mongodb://wekan-mongodb:27017"
   - name: "METEOR_REACTIVITY_ORDER"
-    value: "changeStreams,oplog,polling"
+    value: "oplog,polling"
   - name: "DDP_TRANSPORT"
-    value: "uws"
+    value: "sockjs"
   - name: "MONGO_OPLOG_URL"
     value: "mongodb://127.0.0.1:27017/local?replicaSet=rs0"
+
+## Maybe try later these newer settings, do they work:
+#  - name: "METEOR_REACTIVITY_ORDER"
+#    value: "changeStreams,oplog,polling"
+#  - name: "DDP_TRANSPORT"
+#    value: "uws"
 
 ## TODO: INITIALIZE REPLICA SET MANUALLY OR AUTOMATICALLY:
 ## https://forums.meteor.com/t/meteor-3-5-beta-change-streams-performance-improvements/64461/74
