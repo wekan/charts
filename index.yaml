@@ -10,7 +10,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: b24cbe574801921d21c1802e18902ba07c6c8fb8f7eab19f13efd9d40eeb231f  wekan-9.39.0.tgz
+    digest: b24cbe574801921d21c1802e18902ba07c6c8fb8f7eab19f13efd9d40eeb231f
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -42,7 +42,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: d9bc571b56c10f16f1724ac04bb768b4e4e8eaa3af748b8ac8b1238c7f4c4d7b  wekan-9.37.0.tgz
+    digest: d9bc571b56c10f16f1724ac04bb768b4e4e8eaa3af748b8ac8b1238c7f4c4d7b
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -74,7 +74,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: f17d9218fa98f9a5fa8784ac392ef298e7ba1dc34073500663af49fde741cb7a  wekan-9.36.0.tgz
+    digest: f17d9218fa98f9a5fa8784ac392ef298e7ba1dc34073500663af49fde741cb7a
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -106,7 +106,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: 9b62b42c4cadf99366882d87c5e19f83104cac32499976f9e5e41568f633cbb6  wekan-9.36.0.tgz
+    digest: 9b62b42c4cadf99366882d87c5e19f83104cac32499976f9e5e41568f633cbb6
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -138,7 +138,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: 573e3696d51ac6260df15e59346f0cee0e73b203268e19bae96201d16d735626  wekan-9.36.0.tgz
+    digest: 573e3696d51ac6260df15e59346f0cee0e73b203268e19bae96201d16d735626
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -170,7 +170,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: 8f6695ce6ef94a8bbe1106f0a434a23bad55314747edf0a8a7b84ce1c4967964  wekan-9.36.0.tgz
+    digest: 8f6695ce6ef94a8bbe1106f0a434a23bad55314747edf0a8a7b84ce1c4967964
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -202,7 +202,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: 8ae039a276a533a78da7d86152b6cebb0ec178c2e86b315473c52c255bd2c227  wekan-9.35.0.tgz
+    digest: 8ae039a276a533a78da7d86152b6cebb0ec178c2e86b315473c52c255bd2c227
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -234,7 +234,7 @@ entries:
       repository: https://groundhog2k.github.io/helm-charts/
       version: 0.7.2
     description: Open Source kanban
-    digest: 53e5f859cd60f63c9d2495739cd02147c035d95c71e37aa0e064933820b5f9db 
+    digest: 53e5f859cd60f63c9d2495739cd02147c035d95c71e37aa0e064933820b5f9db
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
