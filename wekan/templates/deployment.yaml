@@ -63,13 +63,21 @@ spec:
           env:
             - name: ROOT_URL
               value: {{ .Values.root_url | quote }}
-          {{- $mongo_url_is_secret := false }}
+          {{- /* #6289: only emit the chart's computed MONGO_URL when the user
+                 has not already provided one via env or secretEnv, otherwise the
+                 Deployment gets duplicate MONGO_URL entries and fails to apply. */}}
+          {{- $mongo_url_provided := false }}
           {{- range $key := .Values.secretEnv }}
             {{- if eq .name "MONGO_URL" }}
-              {{- $mongo_url_is_secret = true }}
+              {{- $mongo_url_provided = true }}
             {{- end }}
           {{- end }}
-          {{- if not $mongo_url_is_secret }}
+          {{- range $key := .Values.env }}
+            {{- if and (eq .name "MONGO_URL") .value }}
+              {{- $mongo_url_provided = true }}
+            {{- end }}
+          {{- end }}
+          {{- if not $mongo_url_provided }}
             - name: MONGO_URL
               value: "{{ template "mongodb.url" . }}"
           {{- end }}
