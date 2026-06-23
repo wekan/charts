@@ -17,7 +17,7 @@ serviceAccounts:
 ##
 image:
   repository: ghcr.io/wekan/wekan
-  tag: v9.67
+  tag: v9.68
   pullPolicy: IfNotPresent
 
 ## Configuration for wekan component
