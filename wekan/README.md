@@ -123,17 +123,20 @@ horizontally with `replicaCount` and the HPA above.
 
 The image is published to three registries by
 [wekan/FerretDB's docker workflow](https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml),
-but only two of them can be pulled without credentials:
+and all three serve it publicly:
 
 | Registry | Anonymous pull |
 | --- | --- |
-| `quay.io/wekan/ferretdb` | yes — the default here |
+| `ghcr.io/wekan/ferretdb` | yes — the default here |
+| `quay.io/wekan/ferretdb` | yes |
 | `wekanteam/ferretdb` (Docker Hub) | yes |
-| `ghcr.io/wekan/ferretdb` | **no** — the GHCR package is private |
 
-GHCR packages are private until somebody makes them public; until that is done
-for this one, pointing the chart at it gives `ImagePullBackOff` (and Artifact
-Hub's scanner reports `image not found`). `ferretdb.image.repository` takes
+The GHCR one was private until 2026-08-12 — GHCR packages are private until made
+public — which showed up as `ImagePullBackOff` in a cluster and as
+`image not found` in Artifact Hub's scan. If a pull of the default ever fails
+that way, check that package's visibility first.
+
+`ferretdb.image.repository` takes
 whichever one your cluster can reach, or your own mirror.
 
 ### The same settings on MongoDB

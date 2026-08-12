@@ -1226,27 +1226,30 @@ extraDeploy: []
 ferretdb:
   enabled: true
   image:
-    # quay.io, NOT ghcr.io, and that is not a preference (charts#54 follow-up).
-    # wekan/FerretDB's workflow pushes the same multi-arch image to three
-    # registries, but only two of them can be PULLED without credentials:
+    # All THREE registries wekan/FerretDB pushes to serve this image publicly,
+    # and that took a fix: ghcr.io/wekan/ferretdb was PRIVATE, because a GHCR
+    # package is private until somebody makes it public - and the wekan org had
+    # public packages disabled altogether, so the setting was greyed out.
+    # Artifact Hub said so about this chart:
     #
-    #   quay.io/wekan/ferretdb    public  (the default here)
-    #   wekanteam/ferretdb        public  (Docker Hub)
-    #   ghcr.io/wekan/ferretdb    denies an anonymous pull - GHCR packages are
-    #                             private until somebody makes them public, and
-    #                             this one has not been
-    #
-    # An Artifact Hub scan of the chart said so out loud:
     #   error scanning image ghcr.io/wekan/ferretdb:latest: image not found
-    # and a cluster pulling it would have failed the same way, with ImagePullBackOff.
-    # If the GHCR package is made public (wekan org -> Packages -> ferretdb ->
-    # Package settings -> Change visibility), it becomes usable here too.
+    #
+    # and a cluster would have said ImagePullBackOff. Both the org policy and the
+    # package are public now, verified by an anonymous pull of the manifest.
+    #
+    #   ghcr.io/wekan/ferretdb    (the default, beside ghcr.io/wekan/wekan)
+    #   quay.io/wekan/ferretdb
+    #   wekanteam/ferretdb        (Docker Hub)
+    #
+    # If a pull ever fails with "denied" or "not found", check that package's
+    # visibility FIRST - wekan org -> Packages -> ferretdb -> Package settings -
+    # and remember the other two are one line away.
     #
     # WHAT THIS REPLACED: the chart used to install MongoDB from Docker Hub's
     # official image, docker.io/library/mongo, pinned to 7.0.34 - WeKan needs
     # MongoDB 7, and the chart it came from had moved to 8. That image has no
     # wekan-built mirror, unlike the ones above.
-    repository: quay.io/wekan/ferretdb
+    repository: ghcr.io/wekan/ferretdb
     tag: latest
     pullPolicy: IfNotPresent
   # Where the SQLite data lives inside the container. The image declares /state

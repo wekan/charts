@@ -23,23 +23,23 @@ with no shell, so there is nothing to chown into place and no init container.
 
 The same image is pushed to THREE registries by
 https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml -
-each in its own step, so one registry being down does not stop the others - but
-only two of them can be PULLED without credentials:
+each in its own step, so one registry being down does not stop the others - and
+all three now serve it to anyone (values.yaml: ferretdb.image.repository):
 
-    quay.io/wekan/ferretdb        (the default here)
+    ghcr.io/wekan/ferretdb        (the default)
+    quay.io/wekan/ferretdb
     wekanteam/ferretdb            (Docker Hub)
-    ghcr.io/wekan/ferretdb        anonymous pull DENIED: a GHCR package is
-                                  private until somebody makes it public, and
-                                  this one has not been
 
-That is not a detail: it was the default here for a day, and Artifact Hub's scan
-of the published chart said
+"Now" is the word to keep: ghcr.io/wekan/ferretdb was PRIVATE, because a GHCR
+package is private until somebody makes it public and the wekan organisation had
+public packages disabled, so the setting was greyed out. Artifact Hub reported it
+against this chart -
 
     error scanning image ghcr.io/wekan/ferretdb:latest: image not found
 
-which is what a cluster would have hit as ImagePullBackOff. If the GHCR package
-is made public (wekan org -> Packages -> ferretdb -> Package settings -> Change
-visibility), it works here too.
+- and a cluster would have met the same thing as ImagePullBackOff. So if a pull
+of the default ever fails that way again, look at the package's visibility before
+anything else.
 
 Each carries `latest` and the version tag, multi-arch: amd64, arm64, arm v5/v6/v7,
 386, ppc64le, riscv64, s390x, loong64. A cluster that mirrors or pulls through a
