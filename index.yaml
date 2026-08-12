@@ -3,9 +3,9 @@ entries:
   wekan:
   - apiVersion: v2
     appVersion: '10.85'
-    created: '2026-08-12T14:11:53.320453+00:00'
+    created: '2026-08-12T14:22:12.023801+00:00'
     description: Open Source kanban
-    digest: b405401852e1b091b81e97ca5041a4bfca5e7b7bf19eafb4a1c1c55ca209f293
+    digest: 3d6c57722394b00b091a581793e798854a29f18ff6a58a693aac1946762cadd9
     home: https://wekan.fi
     icon: https://wekan.fi/wekan-logo.svg
     keywords:
@@ -26,8 +26,8 @@ entries:
     - https://github.com/wekan/wekan
     type: application
     urls:
-    - https://wekan.github.io/charts/wekan-10.86.0.tgz
-    version: 10.86.0
+    - https://wekan.github.io/charts/wekan-10.85.1.tgz
+    version: 10.85.1
   - apiVersion: v2
     appVersion: '10.85'
     created: '2026-08-12T05:04:41.059356+00:00'
