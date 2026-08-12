@@ -1219,22 +1219,34 @@ extraDeploy: []
 #
 # The image needs no configuration - SQLite handler, /state, port 27017,
 # telemetry off are its own defaults - and is published to three registries by
-# https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml :
-#   ghcr.io/wekan/ferretdb   quay.io/wekan/ferretdb   wekanteam/ferretdb
+# https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml .
+# Two of the three can be pulled without credentials; see image.repository below.
 # ------------------------------------------------------------------------------
 
 ferretdb:
   enabled: true
   image:
-    # Three registries carry this image (see the comment in
-    # templates/ferretdb-statefulset.yaml):
-    #   ghcr.io/wekan/ferretdb    quay.io/wekan/ferretdb    wekanteam/ferretdb
+    # quay.io, NOT ghcr.io, and that is not a preference (charts#54 follow-up).
+    # wekan/FerretDB's workflow pushes the same multi-arch image to three
+    # registries, but only two of them can be PULLED without credentials:
+    #
+    #   quay.io/wekan/ferretdb    public  (the default here)
+    #   wekanteam/ferretdb        public  (Docker Hub)
+    #   ghcr.io/wekan/ferretdb    denies an anonymous pull - GHCR packages are
+    #                             private until somebody makes them public, and
+    #                             this one has not been
+    #
+    # An Artifact Hub scan of the chart said so out loud:
+    #   error scanning image ghcr.io/wekan/ferretdb:latest: image not found
+    # and a cluster pulling it would have failed the same way, with ImagePullBackOff.
+    # If the GHCR package is made public (wekan org -> Packages -> ferretdb ->
+    # Package settings -> Change visibility), it becomes usable here too.
     #
     # WHAT THIS REPLACED: the chart used to install MongoDB from Docker Hub's
     # official image, docker.io/library/mongo, pinned to 7.0.34 - WeKan needs
     # MongoDB 7, and the chart it came from had moved to 8. That image has no
-    # wekan-built mirror, unlike the three above.
-    repository: ghcr.io/wekan/ferretdb
+    # wekan-built mirror, unlike the ones above.
+    repository: quay.io/wekan/ferretdb
     tag: latest
     pullPolicy: IfNotPresent
   # Where the SQLite data lives inside the container. The image declares /state

@@ -23,7 +23,7 @@ annotations:
     - name: wekan
       image: ghcr.io/wekan/wekan:v10.91
     - name: ferretdb
-      image: ghcr.io/wekan/ferretdb:latest
+      image: quay.io/wekan/ferretdb:latest
 description: Open Source kanban
 home: https://wekan.fi
 icon: https://wekan.fi/wekan-logo.svg

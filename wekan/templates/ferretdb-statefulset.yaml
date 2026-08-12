@@ -23,15 +23,27 @@ with no shell, so there is nothing to chown into place and no init container.
 
 The same image is pushed to THREE registries by
 https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml -
-each in its own step, so one registry being down does not stop the others - and
-any of them can be used here (values.yaml: ferretdb.image.repository):
+each in its own step, so one registry being down does not stop the others - but
+only two of them can be PULLED without credentials:
 
-    ghcr.io/wekan/ferretdb        (the default)
-    quay.io/wekan/ferretdb
+    quay.io/wekan/ferretdb        (the default here)
     wekanteam/ferretdb            (Docker Hub)
+    ghcr.io/wekan/ferretdb        anonymous pull DENIED: a GHCR package is
+                                  private until somebody makes it public, and
+                                  this one has not been
 
-Each carries `latest` and the version tag, multi-arch. A cluster that mirrors or
-pulls through a proxy points the repository at its own copy the same way.
+That is not a detail: it was the default here for a day, and Artifact Hub's scan
+of the published chart said
+
+    error scanning image ghcr.io/wekan/ferretdb:latest: image not found
+
+which is what a cluster would have hit as ImagePullBackOff. If the GHCR package
+is made public (wekan org -> Packages -> ferretdb -> Package settings -> Change
+visibility), it works here too.
+
+Each carries `latest` and the version tag, multi-arch: amd64, arm64, arm v5/v6/v7,
+386, ppc64le, riscv64, s390x, loong64. A cluster that mirrors or pulls through a
+proxy points the repository at its own copy the same way.
 
 WHAT THIS REPLACED, for anyone reading an older values.yaml or moving back: the
 database was `mongo` from Docker Hub (docker.io/library/mongo), pinned to 7.0.34
