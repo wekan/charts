@@ -1,5 +1,21 @@
 # ------------------------------------------------------------------------------
 # Wekan:
+#
+# The database is FerretDB (charts#55), installed by this chart itself - see the
+# `ferretdb:` section near the bottom. Every FerretDB-specific setting below says
+# what it would be on MongoDB instead, so the two files WeKan ships can be read
+# beside this one:
+#
+#   FerretDB   https://github.com/wekan/wekan/blob/main/docker-compose.yml
+#   MongoDB 7  https://github.com/wekan/wekan/blob/main/docker-compose-mongodb-v7.yml
+#
+# Running WeKan in PRODUCTION - reverse proxy, TLS, backups and restore, logs,
+# and the rest of what a real deployment needs - is documented at
+#
+#   https://github.com/wekan/wekan/tree/main/docs/Platforms/FOSS/Container/Docker/Meteor3
+#
+# It is written for Docker, and everything in it that is about WeKan rather than
+# about Docker applies here unchanged.
 # ------------------------------------------------------------------------------
 ## Define platform where helm chart is deployed (set to 'openshift' to disable initContainer with chown command) 
 platform: kubernetes
@@ -28,40 +44,69 @@ dbname: wekan
 
 ## Environment given to the WeKan container.
 ##
-## These defaults are the ones the WeKan project's own docker-compose.yml runs
-## FerretDB with, and they are not interchangeable with the MongoDB ones this
-## chart used to ship:
+## These are the settings WeKan's own docker-compose.yml runs FerretDB with, and
+## each one below says what it would be on MongoDB instead - the two sets are NOT
+## interchangeable, and the differences are the ones between
 ##
-##   METEOR_REACTIVITY_ORDER=polling   FerretDB has no MongoDB change streams,
-##   DEFAULT_METEOR_REACTIVITY_ORDER   and its v1 OpLog on the SQLite backend
-##                                     keeps CPU pinned (wekan/wekan#6503,
-##                                     #6480, #6481). Polling with the calmer
-##                                     defaults is what is verified.
-##   DDP_TRANSPORT=sockjs              uws does not work on s390x; sockjs does.
-##   WRITABLE_PATH=/data               where attachments and avatars are written,
-##                                     matching sharedDataFolder.path below.
-##   WITH_API=true                     Export Board needs it.
+##   FerretDB   https://github.com/wekan/wekan/blob/main/docker-compose.yml
+##   MongoDB 7  https://github.com/wekan/wekan/blob/main/docker-compose-mongodb-v7.yml
 ##
-## MONGO_URL is NOT here on purpose: the chart computes it from the FerretDB
-## Service it installs (templates/_helpers.tpl), which is what charts#54 was
-## about. Set externalDatabase.url instead to point at your own database, and
-## the chart will leave it alone.
-##
-## MONGO_OPLOG_URL is deliberately absent as well. Setting it makes Meteor start
-## an OpLog tail whatever METEOR_REACTIVITY_ORDER says.
+## Running WeKan in production - reverse proxies, TLS, backups, restore, logs,
+## the lot - is documented at
+## https://github.com/wekan/wekan/tree/main/docs/Platforms/FOSS/Container/Docker/Meteor3
 ##
 ## https://github.com/wekan/charts/issues/34
 env:
+  # FerretDB has no MongoDB change streams, and its v1 OpLog on the SQLite
+  # backend keeps CPU pinned (wekan/wekan#6503, #6480, #6481) - so polling, with
+  # the calmer poll intervals WeKan defaults to, is what is verified here.
+  #
+  # ON MONGODB 7 (docker-compose-mongodb-v7.yml): the replica set gives you
+  # change streams, and that file uses
+  #   - METEOR_REACTIVITY_ORDER=changeStreams,oplog,polling
+  # with no DEFAULT_METEOR_REACTIVITY_ORDER. Change streams need mongod started
+  # with --replSet and the set INITIATED (rs.initiate) - the MongoDB compose file
+  # does that in the database container's own command.
   - name: "DEFAULT_METEOR_REACTIVITY_ORDER"
     value: "polling"
   - name: "METEOR_REACTIVITY_ORDER"
     value: "polling"
+  # uws does not work on s390x; sockjs does, everywhere.
+  #
+  # ON MONGODB 7: that file ships `DDP_TRANSPORT=uws`, with sockjs commented
+  # beside it. uws is faster where it works; on s390x it does not.
   - name: "DDP_TRANSPORT"
     value: "sockjs"
+  # Where attachments and avatars are written. Matches sharedDataFolder.path
+  # below, and is the same on either database - it is a WeKan setting, not a
+  # database one.
   - name: "WRITABLE_PATH"
     value: "/data"
+  # Export Board needs it. Same on either database.
   - name: "WITH_API"
     value: "true"
+
+  ## MONGO_URL is NOT here on purpose: the chart computes it from the FerretDB
+  ## Service it installs (templates/_helpers.tpl), which is what charts#54 was
+  ## about. Set externalDatabase.url instead to point at your own database, and
+  ## the chart leaves it alone.
+  ##
+  ## FerretDB (this chart):
+  ##   mongodb://<release>-ferretdb:27017/wekan?directConnection=true
+  ## MongoDB 7 (docker-compose-mongodb-v7.yml):
+  ##   MONGO_URL=mongodb://wekandb:27017/wekan
+  ##
+  ## directConnection=true is required for FerretDB and harmless for a
+  ## single-node MongoDB (wekan/wekan#6582): without it the driver does
+  ## replica-set discovery, drops the host in the URL and dials the address the
+  ## server advertises, which for FerretDB is 0.0.0.0:27017.
+  ##
+  ## MONGO_OPLOG_URL is deliberately absent as well: setting it makes Meteor
+  ## start an OpLog tail whatever METEOR_REACTIVITY_ORDER says.
+  ##
+  ## MongoDB 7 uses it, because there the OpLog is a real replica-set OpLog:
+  ##   MONGO_OPLOG_URL=mongodb://wekandb:27017/local?replicaSet=rs0
+  ## On FerretDB v1 that tail is what pins the CPU, so it stays unset here.
 
 ## EVERY OTHER SETTING WeKan takes, copied from the project's own
 ## docker-compose.yml (https://github.com/wekan/wekan/blob/main/docker-compose.yml)
@@ -1181,6 +1226,14 @@ extraDeploy: []
 ferretdb:
   enabled: true
   image:
+    # Three registries carry this image (see the comment in
+    # templates/ferretdb-statefulset.yaml):
+    #   ghcr.io/wekan/ferretdb    quay.io/wekan/ferretdb    wekanteam/ferretdb
+    #
+    # WHAT THIS REPLACED: the chart used to install MongoDB from Docker Hub's
+    # official image, docker.io/library/mongo, pinned to 7.0.34 - WeKan needs
+    # MongoDB 7, and the chart it came from had moved to 8. That image has no
+    # wekan-built mirror, unlike the three above.
     repository: ghcr.io/wekan/ferretdb
     tag: latest
     pullPolicy: IfNotPresent

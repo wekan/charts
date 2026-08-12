@@ -127,6 +127,35 @@ The image is published to three registries by
 (Docker Hub) — so `ferretdb.image.repository` can point at whichever one your
 cluster can reach, or at your own mirror.
 
+### The same settings on MongoDB
+
+WeKan ships two compose files, and the difference between them is the difference
+between this chart's defaults and what you would set for MongoDB:
+
+| Setting | FerretDB (this chart) | MongoDB 7 |
+| --- | --- | --- |
+| `METEOR_REACTIVITY_ORDER` | `polling` | `changeStreams,oplog,polling` |
+| `DEFAULT_METEOR_REACTIVITY_ORDER` | `polling` | *(unset)* |
+| `DDP_TRANSPORT` | `sockjs` | `uws` (sockjs on s390x) |
+| `MONGO_URL` | `mongodb://<release>-ferretdb:27017/wekan?directConnection=true` | `mongodb://<host>:27017/wekan` |
+| `MONGO_OPLOG_URL` | *(unset — the v1 OpLog pins the CPU)* | `mongodb://<host>:27017/local?replicaSet=rs0` |
+| database image | `ghcr.io/wekan/ferretdb` (also quay.io, Docker Hub) | `docker.io/library/mongo:7` |
+| replica set | none | required for change streams (`--replSet`, `rs.initiate`) |
+
+- FerretDB: [docker-compose.yml](https://github.com/wekan/wekan/blob/main/docker-compose.yml)
+- MongoDB 7: [docker-compose-mongodb-v7.yml](https://github.com/wekan/wekan/blob/main/docker-compose-mongodb-v7.yml)
+
+`values.yaml` says the same thing next to each setting, so the comparison is
+there when you are editing rather than only here.
+
+### Production
+
+Reverse proxy, TLS, backups and restore, logs, and the rest of what a real
+deployment needs:
+[docs/Platforms/FOSS/Container/Docker/Meteor3](https://github.com/wekan/wekan/tree/main/docs/Platforms/FOSS/Container/Docker/Meteor3).
+It is written for Docker, and everything in it that is about WeKan rather than
+about Docker applies to this chart unchanged.
+
 ### Using your own database instead
 
 ```yaml

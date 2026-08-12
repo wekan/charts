@@ -100,6 +100,19 @@ worked before is left exactly as it was.
 
 The old `mongodb.url` value is still honoured, so a chart upgrade does not lose
 somebody's external database.
+
+THE SAME URL ON MONGODB, for comparison - WeKan's two compose files differ here
+and nowhere more importantly:
+
+  FerretDB   mongodb://<release>-ferretdb:27017/wekan?directConnection=true
+  MongoDB 7  mongodb://wekandb:27017/wekan
+             plus MONGO_OPLOG_URL=mongodb://wekandb:27017/local?replicaSet=rs0
+
+(docker-compose.yml and docker-compose-mongodb-v7.yml in wekan/wekan). The OpLog
+URL is the real difference: on MongoDB it is a replica-set OpLog and Meteor uses
+it; on FerretDB v1 tailing it pins the CPU, so this chart sets no MONGO_OPLOG_URL
+at all. Production deployment notes for either:
+https://github.com/wekan/wekan/tree/main/docs/Platforms/FOSS/Container/Docker/Meteor3
 */}}
 {{- define "mongodb.url" -}}
 {{- $external := "" -}}

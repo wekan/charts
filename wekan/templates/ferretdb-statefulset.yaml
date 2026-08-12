@@ -32,6 +32,17 @@ any of them can be used here (values.yaml: ferretdb.image.repository):
 
 Each carries `latest` and the version tag, multi-arch. A cluster that mirrors or
 pulls through a proxy points the repository at its own copy the same way.
+
+WHAT THIS REPLACED, for anyone reading an older values.yaml or moving back: the
+database was `mongo` from Docker Hub (docker.io/library/mongo), pinned to 7.0.34
+because WeKan needs MongoDB 7 and the chart it came from had moved to 8. It was
+pulled in by the groundhog2k MongoDB chart rather than defined here, which is how
+the Service name in MONGO_URL came to be a guess (#54). To keep running that
+database, install it yourself (or keep the one the old chart left behind) and set
+ferretdb.enabled=false with externalDatabase.url. Note the asymmetry: WeKan
+publishes its own images to three registries, while `mongo` is MongoDB Inc's
+official Docker Hub image (docker.io/library/mongo:7) and there is no wekan-built
+mirror of it - a cluster that cannot reach Docker Hub needs its own.
 */}}
 apiVersion: apps/v1
 kind: StatefulSet
