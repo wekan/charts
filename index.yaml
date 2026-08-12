@@ -3,33 +3,6 @@ entries:
   wekan:
   - apiVersion: v2
     appVersion: '10.85'
-    created: '2026-08-12T14:22:12.023801+00:00'
-    description: Open Source kanban
-    digest: 3d6c57722394b00b091a581793e798854a29f18ff6a58a693aac1946762cadd9
-    home: https://wekan.fi
-    icon: https://wekan.fi/wekan-logo.svg
-    keywords:
-    - kanban
-    maintainers:
-    - email: support@wekan.fi
-      name: wekan
-    - email: x@xet7.org
-      name: xet7
-    - email: github@randall.cc
-      name: technotaff
-    - email: jiangyt.cn@gmail.com
-      name: jiangytcn
-    - email: varac@varac.net
-      name: varac
-    name: wekan
-    sources:
-    - https://github.com/wekan/wekan
-    type: application
-    urls:
-    - https://wekan.github.io/charts/wekan-10.85.1.tgz
-    version: 10.85.1
-  - apiVersion: v2
-    appVersion: '10.85'
     created: '2026-08-12T05:04:41.059356+00:00'
     dependencies:
     - condition: mongodb.enabled
