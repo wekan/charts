@@ -30,4 +30,4 @@ name: wekan
 sources:
   - https://github.com/wekan/wekan
 type: application
-version: 10.86.0
+version: 10.85.1
