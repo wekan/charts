@@ -1,0 +1,147 @@
+{{- if .Values.ferretdb.enabled }}
+{{/*
+FerretDB is the database WeKan ships with (charts#55), and the reason it is
+IN this chart rather than a dependency on somebody else's is charts#54.
+
+That issue is a MONGO_URL built out of names an external chart happened to use:
+`_helpers.tpl` assembled `<release>-mongodb-0.<release>-mongodb-headless`, which
+is Bitnami's per-pod StatefulSet DNS. The chart WeKan actually depends on
+(groundhog2k) names its services `<release>-mongodb` and
+`<release>-mongodb-internal`, so the address WeKan dialled did not exist:
+
+  MongoNetworkError: getaddrinfo ENOTFOUND wekan-mongodb-0.wekan-mongodb
+
+Guessing another chart's naming is the whole class of bug. The database this
+chart installs is now defined here, so its Service name is this chart's to know:
+one StatefulSet, one ClusterIP Service, no per-pod DNS and no replica set to
+initialise by hand.
+
+The image (ghcr.io/wekan/ferretdb) needs no configuration: its own defaults are
+the SQLite handler, /state as the data directory (a VOLUME), 0.0.0.0:27017 as the
+listen address and telemetry off. It is a `scratch` image running as uid 1000
+with no shell, so there is nothing to chown into place and no init container.
+
+The same image is pushed to THREE registries by
+https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml -
+each in its own step, so one registry being down does not stop the others - and
+any of them can be used here (values.yaml: ferretdb.image.repository):
+
+    ghcr.io/wekan/ferretdb        (the default)
+    quay.io/wekan/ferretdb
+    wekanteam/ferretdb            (Docker Hub)
+
+Each carries `latest` and the version tag, multi-arch. A cluster that mirrors or
+pulls through a proxy points the repository at its own copy the same way.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "wekan.ferretdb.fullname" . }}
+  labels:
+    app: {{ template "wekan.name" . }}
+    chart: {{ template "wekan.chart" . }}
+    component: ferretdb
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ template "wekan.ferretdb.fullname" . }}
+  # ONE. FerretDB v1 on SQLite is a single writer over one data directory, and a
+  # second replica would be a second process writing the same file: not a replica
+  # set, just corruption. WeKan itself scales horizontally (replicaCount above).
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ template "wekan.name" . }}
+      component: ferretdb
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "wekan.name" . }}
+        component: ferretdb
+        release: {{ .Release.Name }}
+      {{- with .Values.ferretdb.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.ferretdb.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: ferretdb
+          image: "{{ .Values.ferretdb.image.repository }}:{{ .Values.ferretdb.image.tag }}"
+          imagePullPolicy: {{ .Values.ferretdb.image.pullPolicy }}
+          terminationMessagePolicy: FallbackToLogsOnError
+          ports:
+            - name: mongo
+              containerPort: 27017
+          env:
+            # The image already defaults to all of these; they are written out so
+            # `kubectl describe` says what the database is doing without anyone
+            # having to know the image's defaults.
+            - name: FERRETDB_HANDLER
+              value: "sqlite"
+            - name: FERRETDB_SQLITE_URL
+              value: "file:{{ .Values.ferretdb.dataPath }}/"
+            - name: FERRETDB_STATE_DIR
+              value: {{ .Values.ferretdb.dataPath | quote }}
+            - name: FERRETDB_LISTEN_ADDR
+              value: "0.0.0.0:27017"
+            - name: FERRETDB_TELEMETRY
+              value: "disable"
+            {{- range $key := .Values.ferretdb.env }}
+            - name: {{ $key.name }}
+              value: {{ $key.value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: ferretdb-data
+              mountPath: {{ .Values.ferretdb.dataPath }}
+          resources:
+            {{- toYaml .Values.ferretdb.resources | nindent 12 }}
+          {{- with .Values.ferretdb.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.ferretdb.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.ferretdb.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.ferretdb.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ferretdb.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.ferretdb.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.ferretdb.storage.existingClaim }}
+      volumes:
+        - name: ferretdb-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.ferretdb.storage.existingClaim }}
+      {{- end }}
+  {{- if not .Values.ferretdb.storage.existingClaim }}
+  volumeClaimTemplates:
+    - metadata:
+        name: ferretdb-data
+      spec:
+        accessModes:
+          - {{ .Values.ferretdb.storage.accessMode }}
+        {{- if .Values.ferretdb.storage.storageClassName }}
+        storageClassName: {{ .Values.ferretdb.storage.storageClassName }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.ferretdb.storage.size }}
+  {{- end }}
+{{- end }}

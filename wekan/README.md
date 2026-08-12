@@ -28,9 +28,15 @@ deletes the release.
 
 ## Features
 
-* Uses a MongoDB replica set by default - this allows fault-tolerant
-  and scalable MongoDB deployment (or just set the replicas to 1 for
-  a single server install)
+* Ships **FerretDB** as its database (`ghcr.io/wekan/ferretdb`), installed by
+  this chart itself as one StatefulSet and one ClusterIP Service. This is what
+  WeKan itself runs on ([charts#55](https://github.com/wekan/charts/issues/55)),
+  and it is why the connection URL cannot be wrong any more
+  ([charts#54](https://github.com/wekan/charts/issues/54)): the Service the chart
+  connects to is the Service the chart creates.
+
+* Works with a database you run yourself instead - a MongoDB, a FerretDB
+  elsewhere, or a managed service - via `externalDatabase.url`.
 
 * Optional Horizontal Pod Autoscaler (HPA), so that your Wekan pods
   will scale automatically with increased CPU load.
@@ -88,29 +94,71 @@ podAnnotations: {}
 This can be useful for integrating with monitoring systems, service meshes, or other Kubernetes tools.
 
 ```yaml
-mongodb:
-  # Optional custom annotations for the MongoDB pods
+ferretdb:
+  # Optional custom annotations for the FerretDB pod
   podAnnotations: {}
 ```
 
-**podAnnotations:** These are custom annotations that will be applied to the MongoDB pods.
+**podAnnotations:** These are custom annotations that will be applied to the FerretDB pod.
+
+### The database
 
 ```yaml
-mongodb-replicaset:
+ferretdb:
   enabled: true
-  replicas: 3
-  replicaSetName: rs0
-  securityContext:
-    runAsUser: 1000
-    fsGroup: 1000
-    runAsNonRoot: true
+  image:
+    repository: ghcr.io/wekan/ferretdb
+    tag: latest
+  storage:
+    size: 8Gi
+    accessMode: ReadWriteOnce
+    # storageClassName: ""
+    # existingClaim: ""
 ```
 
-This section controls the scale of the MongoDB redundant Replica Set.
+FerretDB runs as **one** replica, and that is not a limitation to work around:
+FerretDB v1 on SQLite is a single writer over one data directory, so a second
+pod would be a second process writing the same file. WeKan itself scales
+horizontally with `replicaCount` and the HPA above.
 
-**replicas:** This is the number of MongoDB instances to include in the set.
-You can set this to 1 for a single server - this will still allow you to
-scale-up later with a helm upgrade.
+The image is published to three registries by
+[wekan/FerretDB's docker workflow](https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml)
+— `ghcr.io/wekan/ferretdb`, `quay.io/wekan/ferretdb` and `wekanteam/ferretdb`
+(Docker Hub) — so `ferretdb.image.repository` can point at whichever one your
+cluster can reach, or at your own mirror.
+
+### Using your own database instead
+
+```yaml
+ferretdb:
+  enabled: false
+externalDatabase:
+  url: "mongodb://mongodb.example.com:27017/wekan"
+```
+
+`directConnection=true` is appended for you unless your URL already sets it.
+That parameter is required rather than decorative
+([wekan/wekan#6582](https://github.com/wekan/wekan/issues/6582)): without it the
+MongoDB driver performs replica-set discovery, drops the host you wrote and dials
+the address the server advertises — which for FerretDB is `0.0.0.0:27017`, and
+inside the WeKan pod that is the WeKan pod.
+
+### Upgrading from the MongoDB versions of this chart (≤ 10.85.0)
+
+Nothing is deleted by the upgrade: the MongoDB StatefulSet and its
+PersistentVolumeClaim from the old dependency are left where they are. The
+shortest route is to keep using them, by pointing the chart at the Service that
+chart really created:
+
+```yaml
+ferretdb:
+  enabled: false
+externalDatabase:
+  url: "mongodb://<release>-mongodb:27017/wekan"
+```
+
+To move onto FerretDB instead, `mongodump` from MongoDB and `mongorestore` into
+FerretDB — both speak the MongoDB wire protocol, so the tools work unchanged.
 
 ### Install OCP route
 
@@ -137,12 +185,12 @@ test:
     repository: docker.io/busybox
 ```
 
-Additionally, set the mongodb chart to use your local docker.io mirror with the following snippet:
+Additionally, point the database image at your own registry:
 
 ```yaml
-mongodb:
+ferretdb:
   image:
-    registry: "<your docker.io mirror goes here>"
+    repository: "<your mirror>/wekan/ferretdb"
 ```
 
 This setup will ensure that all images are pulled from your specified local registry, optimizing performance and reliability for your deployment environment.

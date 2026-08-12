@@ -1,10 +1,15 @@
 apiVersion: v2
 appVersion: "10.85"
-dependencies:
-  - condition: mongodb.enabled
-    name: mongodb
-    repository: https://groundhog2k.github.io/helm-charts/
-    version: 0.7.6
+# charts#55: the database is FerretDB, and charts#54 is why it is not a
+# dependency on somebody else's chart any more. The old MongoDB dependency
+# (groundhog2k) named its services one way while wekan/templates/_helpers.tpl
+# built a MONGO_URL out of Bitnami's naming, so WeKan dialled a host that did not
+# exist. FerretDB is defined by this chart now - templates/ferretdb-*.yaml - so
+# the Service name in MONGO_URL is this chart's own and cannot drift.
+#
+# An external database (a MongoDB you run yourself, a FerretDB elsewhere, a
+# managed service) is still supported: set externalDatabase.url in values.yaml
+# and ferretdb.enabled=false.
 description: Open Source kanban
 home: https://wekan.fi
 icon: https://wekan.fi/wekan-logo.svg
@@ -25,4 +30,4 @@ name: wekan
 sources:
   - https://github.com/wekan/wekan
 type: application
-version: 10.85.0
+version: 10.86.0

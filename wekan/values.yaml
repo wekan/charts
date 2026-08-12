@@ -26,36 +26,960 @@ image:
 replicaCount: 1
 dbname: wekan
 
-## Specify additional environmental variables for the Deployment
+## Environment given to the WeKan container.
+##
+## These defaults are the ones the WeKan project's own docker-compose.yml runs
+## FerretDB with, and they are not interchangeable with the MongoDB ones this
+## chart used to ship:
+##
+##   METEOR_REACTIVITY_ORDER=polling   FerretDB has no MongoDB change streams,
+##   DEFAULT_METEOR_REACTIVITY_ORDER   and its v1 OpLog on the SQLite backend
+##                                     keeps CPU pinned (wekan/wekan#6503,
+##                                     #6480, #6481). Polling with the calmer
+##                                     defaults is what is verified.
+##   DDP_TRANSPORT=sockjs              uws does not work on s390x; sockjs does.
+##   WRITABLE_PATH=/data               where attachments and avatars are written,
+##                                     matching sharedDataFolder.path below.
+##   WITH_API=true                     Export Board needs it.
+##
+## MONGO_URL is NOT here on purpose: the chart computes it from the FerretDB
+## Service it installs (templates/_helpers.tpl), which is what charts#54 was
+## about. Set externalDatabase.url instead to point at your own database, and
+## the chart will leave it alone.
+##
+## MONGO_OPLOG_URL is deliberately absent as well. Setting it makes Meteor start
+## an OpLog tail whatever METEOR_REACTIVITY_ORDER says.
 ##
 ## https://github.com/wekan/charts/issues/34
 env:
-  - name: "MONGO_URL"
-    value: "mongodb://wekan-mongodb:27017"
+  - name: "DEFAULT_METEOR_REACTIVITY_ORDER"
+    value: "polling"
   - name: "METEOR_REACTIVITY_ORDER"
-    value: "oplog,polling"
+    value: "polling"
   - name: "DDP_TRANSPORT"
     value: "sockjs"
-  - name: "MONGO_OPLOG_URL"
-    value: "mongodb://127.0.0.1:27017/local?replicaSet=rs0"
+  - name: "WRITABLE_PATH"
+    value: "/data"
+  - name: "WITH_API"
+    value: "true"
 
-## Above works with multitenancy. These work only with one domain:
+## EVERY OTHER SETTING WeKan takes, copied from the project's own
+## docker-compose.yml (https://github.com/wekan/wekan/blob/main/docker-compose.yml)
+## with its comments, so this file is a complete reference rather than a subset
+## somebody has to guess the rest of. Uncomment what you need and add it to `env`
+## above, or to `secretEnv` when it is a password or a token.
+##
+## Mail, LDAP, OAuth2/OIDC, SAML, CAS, S3, rate limits, Matomo, browser policy,
+## webhooks, accounts lockout, notifications, logging - all of it is below.
+##
+## ---------------------------------------------------------------------------
+# -------------------- USING MONGODB CHANGE STREAMS WITH REPLICA SETS AT CURRENT DATABASE --------------------
+# If you would not like to use Change Streams and replica set for improving speed, change to use polling:
 #  - name: "METEOR_REACTIVITY_ORDER"
-#    value: "changeStreams,oplog,polling"
+#    value: "polling"
+# https://forums.meteor.com/t/meteor-3-5-beta-change-streams-performance-improvements/64461#change-streams-setup-3
+# https://github.com/meteor/meteor/blob/release-3.5/v3-docs/docs/performance/change-streams-observer-driver.md#choosing-the-reactivity-driver-order
+# Keep oplog/polling fallback available for deployments that cannot use Change Streams:
+# https://github.com/wekan/wekan/issues/6307#issuecomment-4299349231
+# wekan/wekan#6503/#6480/#6481: FerretDB v1 CAN tail an OpLog (the ferretdb
+# service above runs with --repl-set-name=rs0). On the SQLite backend that
+# tail keeps FerretDB CPU pinned (~190–390% even idle) and a struggling tail
+# shows as "oplog catching up took too long" and stalls loading; on this
+# backend it is simply UNVERIFIED. Either way FerretDB has no MongoDB change
+# streams, so the DEFAULT here is POLLING ONLY. To try OpLog tailing, set both
+# to `oplog,polling` and uncomment MONGO_OPLOG_URL in the wekan service below.
+#  - name: "DEFAULT_METEOR_REACTIVITY_ORDER"
+#    value: "polling"
+#  - name: "METEOR_REACTIVITY_ORDER"
+#    value: "polling"
+# uws does not work at s390x. sockjs works.
 #  - name: "DDP_TRANSPORT"
 #    value: "uws"
-
-## TODO: INITIALIZE REPLICA SET MANUALLY OR AUTOMATICALLY:
-## https://forums.meteor.com/t/meteor-3-5-beta-change-streams-performance-improvements/64461/74
-# echo "Checking MongoDB replica set status..."
-# if mongosh --port 27017 --quiet --eval 'rs.status().ok' 2>/dev/null | grep -q 1; then
-#   echo "Replica set already initialized."
-# else
-# echo "Initializing replica set rs0..."
-#   mongosh --port 27017 --eval 'rs.initiate({_id: "rs0", members: [{_id: 0, host: "127.0.0.1:27017"}]})'
-#   sleep 3
-#   echo "Replica set rs0 initialized."
-# fi
+#  - name: "DDP_TRANSPORT"
+#    value: "sockjs"
+# -----------------------------------------------------------------
+# ==== WRITEABLE PATH FOR FILE UPLOADS ====
+#  - name: "WRITABLE_PATH"
+#    value: "/data"
+# -----------------------------------------------------------------
+# ==== AWS S3 FOR FILES ====
+# Any region. For example:
+# us-standard,us-west-1,us-west-2,
+# eu-west-1,eu-central-1,
+# ap-southeast-1,ap-northeast-1,sa-east-1
+# 
+#  - name: "S3"
+#    value: "'{\"s3\":{\"key\": \"xxx\", \"secret\": \"xxx\", \"bucket\": \"xxx\", \"region\": \"xxx\"}}'"
+#  - name: "S3_SECRET_FILE"
+#    value: "/run/secrets/s3_secret"
+# -----------------------------------------------------------------
+# ==== MONGO_URL — points to FerretDB (MongoDB-compatible) ====
+# directConnection=true is REQUIRED (wekan/wekan#6582). The ferretdb service
+# above runs with --repl-set-name=rs0, so its handshake advertises a replica
+# set whose only member is its own LISTEN address, 0.0.0.0:27017. Without
+# directConnection the MongoDB driver does replica-set discovery: it drops the
+# host written here and dials the advertised 0.0.0.0:27017 instead, which
+# inside the wekan container is the wekan container itself — that is the
+# "MongoServerSelectionError: connect ECONNREFUSED 0.0.0.0:27017" a fresh
+# `docker compose up` died with. directConnection=true keeps the driver on
+# exactly this host. OpLog tailing is unaffected: Meteor only needs setName in
+# the handshake, which is still there.
+#  - name: "MONGO_URL"
+#    value: "mongodb://wekan-ferretdb:27017/wekan?directConnection=true"
+#  - name: "MONGO_URL"
+#    value: "mongodb://ferretdb:27017/wekan?directConnection=true"
+#  - name: "MONGO_PASSWORD_FILE"
+#    value: "/run/secrets/mongo_password"
+# ---------------------------------------------------------------
+# ==== ROOT_URL SETTING ====
+# Change ROOT_URL to your real Wekan URL, for example:
+# If you have Caddy/Nginx/Apache providing SSL
+# - https://example.com
+# - https://boards.example.com
+# This can be problematic with avatars https://github.com/wekan/wekan/issues/1776
+# - https://example.com/wekan
+# If without https, can be only wekan node, no need for Caddy/Nginx/Apache if you don't need them
+# - http://example.com
+# - http://boards.example.com
+# - http://192.168.1.100    <=== using at local LAN
+#  - name: "ROOT_URL"
+#    value: "http://localhost  #   <=== using only at same laptop/desktop where Wekan is installed"
+# ---------------------------------------------------------------
+# ==== EMAIL SETTINGS ====
+# Email settings are only at MAIL_URL and MAIL_FROM.
+# Admin Panel has test button, but it's not used for settings.
+# see https://github.com/wekan/wekan/blob/main/docs/Email/Troubleshooting-Mail.md
+# For SSL in email, change smtp:// to smtps://
+# NOTE: Special characters need to be url-encoded in MAIL_URL.
+# You can encode those characters for example at: https://www.urlencoder.org
+#  - name: "MAIL_URL"
+#    value: "smtp://user:pass@mailserver.example.com:25/"
+#  - name: "MAIL_URL"
+#    value: "smtp://<mail_url>:25/?ignoreTLS=true&tls={rejectUnauthorized:false}"
+#  - name: "MAIL_FROM"
+#    value: "Wekan Notifications <noreply.wekan@mydomain.com>"
+# Currently MAIL_SERVICE is not in use.
+#  - name: "MAIL_SERVICE"
+#    value: "Outlook365"
+#  - name: "MAIL_SERVICE_USER"
+#    value: "firstname.lastname@hotmail.com"
+#  - name: "MAIL_SERVICE_PASSWORD"
+#    value: "SecretPassword"
+#  - name: "MAIL_SERVICE_PASSWORD_FILE"
+#    value: "/run/secrets/mail_service_password"
+# ---------------------------------------------------------------
+# https://github.com/wekan/wekan/issues/3585#issuecomment-1021522132
+# Add more Node heap, this is done by default at Dockerfile:
+#  - name: "NODE_OPTIONS"
+#    value: "--max_old_space_size=4096"
+# Add more stack, this is done at Dockerfile:
+# bash -c "ulimit -s 65500; exec node --stack-size=65500 main.js"
+# ---------------------------------------------------------------
+# ==== OPTIONAL: MONGO OPLOG SETTINGS =====
+# https://github.com/wekan/wekan-mongodb/issues/2#issuecomment-378343587
+# HIGHLY RECOMMENDED for pub/sub performance!
+# MongoDB oplog is used by Meteor for real-time data synchronization.
+# Without oplog, Meteor falls back to polling which increases:
+# - CPU usage by 3-5x
+# - Network traffic significantly
+# - Latency from 50ms to 2000ms
+# Must configure MongoDB replica set first
+# See: https://blog.meteor.com/tuning-meteor-mongo-livedata-for-scalability-13fe9deb8908
+# FerretDB v1 CAN emulate the OpLog via --repl-set-name=rs0 (set on the
+# ferretdb service above). On the SQLite backend that tail keeps FerretDB CPU
+# pinned and stalls loading (wekan/wekan#6503); on this backend it is
+# UNVERIFIED, so it is DISABLED by default here too. Merely SETTING
+# MONGO_OPLOG_URL makes Meteor start an OpLog tail regardless of the
+# reactivity order (#6498), so it is commented out. To try OpLog tailing,
+# uncomment the next line AND set METEOR_REACTIVITY_ORDER=oplog,polling above.
+# directConnection=true for the same reason as MONGO_URL above (#6582).
+#  - name: "MONGO_OPLOG_URL"
+#    value: "mongodb://ferretdb:27017/local?replicaSet=rs0&directConnection=true"
+# ---------------------------------------------------------------
+# ==== OPTIONAL: KADIRA PERFORMANCE MONITORING FOR METEOR ====
+# https://github.com/edemaine/kadira-compose
+# https://github.com/meteor/meteor-apm-agent
+# https://blog.meteor.com/kadira-apm-is-now-open-source-490469ffc85f
+#  - name: "APM_OPTIONS_ENDPOINT"
+#    value: "http://<kadira-ip>:11011"
+#  - name: "APM_APP_ID"
+#    value: ""
+#  - name: "APM_APP_SECRET"
+#    value: ""
+# ---------------------------------------------------------------
+# ==== OPTIONAL: LOGS AND STATS ====
+# https://github.com/wekan/wekan/blob/main/docs/Features/Logs.md
+# 
+# Daily export of Wekan changes as JSON to Logstash and ElasticSearch / Kibana (ELK)
+# https://github.com/wekan/wekan-logstash
+# 
+# Statistics Python script for Wekan Dashboard
+# https://github.com/wekan/wekan-stats
+# 
+# Console, file, and zulip logger on database changes https://github.com/wekan/wekan/pull/1010
+# with fix to replace console.log by winston logger https://github.com/wekan/wekan/pull/1033
+# but there could be bug https://github.com/wekan/wekan/issues/1094
+# 
+# There is Feature Request: Logging date and time of all activity with summary reports,
+# and requesting reason for changing card to other column https://github.com/wekan/wekan/issues/1598
+# ---------------------------------------------------------------
+# ==== NUMBER OF SEARCH RESULTS PER PAGE BY DEFAULT ====
+#  - name: "RESULTS_PER_PAGE"
+#    value: "20"
+# ---------------------------------------------------------------
+# ==== AFTER OIDC LOGIN, ADD USERS AUTOMATICALLY TO THIS BOARD ID ====
+# https://github.com/wekan/wekan/pull/5098
+#  - name: "DEFAULT_BOARD_ID"
+#    value: "abcd1234"
+# ---------------------------------------------------------------
+# ==== WEKAN API AND EXPORT BOARD ====
+# Wekan Export Board works when WITH_API=true.
+# https://github.com/wekan/wekan/blob/main/docs/API/REST-API.md
+# https://github.com/wekan/wekan-gogs
+# If you disable Wekan API with false, Export Board does not work.
+#  - name: "WITH_API"
+#    value: "true"
+# ---------------------------------------------------------------
+# ==== PASSWORD BRUTE FORCE PROTECTION ====
+# https://atmospherejs.com/lucasantoniassi/accounts-lockout
+# Defaults below. Uncomment to change. wekan/server/accounts-lockout.js
+#  - name: "ACCOUNTS_LOCKOUT_KNOWN_USERS_FAILURES_BEFORE"
+#    value: "3"
+#  - name: "ACCOUNTS_LOCKOUT_KNOWN_USERS_PERIOD"
+#    value: "60"
+#  - name: "ACCOUNTS_LOCKOUT_KNOWN_USERS_FAILURE_WINDOW"
+#    value: "15"
+#  - name: "ACCOUNTS_LOCKOUT_UNKNOWN_USERS_FAILURES_BERORE"
+#    value: "3"
+#  - name: "ACCOUNTS_LOCKOUT_UNKNOWN_USERS_LOCKOUT_PERIOD"
+#    value: "60"
+#  - name: "ACCOUNTS_LOCKOUT_UNKNOWN_USERS_FAILURE_WINDOW"
+#    value: "15"
+# ---------------------------------------------------------------
+# ==== ACCOUNT OPTIONS ====
+# https://docs.meteor.com/api/accounts-multi.html#AccountsCommon-config
+# Defaults below. Uncomment to change. wekan/server/accounts-common.js
+#  - name: "ACCOUNTS_COMMON_LOGIN_EXPIRATION_IN_DAYS"
+#    value: "90"
+# ---------------------------------------------------------------
+# ==== RICH TEXT EDITOR IN CARD COMMENTS ====
+# https://github.com/wekan/wekan/pull/2560
+#  - name: "RICHER_CARD_COMMENT_EDITOR"
+#    value: "false"
+# ---------------------------------------------------------------
+# ==== CARD LOADING: all (default) or lazy ====
+# 'all'  = load every card of a board into the browser (default).
+# 'lazy' = each list loads only the cards currently visible
+# (infinite scroll) plus a live count, so boards with
+# thousands of cards use less memory/bandwidth.
+# Also changeable at runtime in Admin Panel / Features.
+#  - name: "CARDS_LOADING"
+#    value: "all"
+# ---------------------------------------------------------------
+# ==== CARD OPENED, SEND WEBHOOK MESSAGE ====
+# https://github.com/wekan/wekan/issues/2518
+#  - name: "CARD_OPENED_WEBHOOK_ENABLED"
+#    value: "false"
+# ---------------------------------------------------------------
+# ==== Allow configuration to validate uploaded attachments ====
+# -ATTACHMENTS_UPLOAD_EXTERNAL_PROGRAM=/usr/local/bin/avscan {file}
+# -ATTACHMENTS_UPLOAD_MIME_TYPES=image/*,text/*
+# -ATTACHMENTS_UPLOAD_MAX_SIZE=5000000
+# ---------------------------------------------------------------
+# ==== Allow configuration to validate uploaded avatars ====
+# -AVATARS_UPLOAD_EXTERNAL_PROGRAM=/usr/local/bin/avscan {file}
+# -AVATARS_UPLOAD_MIME_TYPES=image/*
+# -AVATARS_UPLOAD_MAX_SIZE=500000
+# ---------------------------------------------------------------
+# ==== Allow to shrink attached/pasted image ====
+# https://github.com/wekan/wekan/pull/2544
+#  - name: "MAX_IMAGE_PIXEL"
+#    value: "1024"
+#  - name: "IMAGE_COMPRESS_RATIO"
+#    value: "80"
+# ---------------------------------------------------------------
+# ==== NOTIFICATION TRAY AFTER READ DAYS BEFORE REMOVE =====
+# Number of days after a notification is read before we remove it.
+# Default: 2
+#  - name: "NOTIFICATION_TRAY_AFTER_READ_DAYS_BEFORE_REMOVE"
+#    value: "2"
+# ---------------------------------------------------------------
+# ==== BIGEVENTS DUE ETC NOTIFICATIONS =====
+# https://github.com/wekan/wekan/pull/2541
+# Introduced a system env var BIGEVENTS_PATTERN default as "NONE",
+# so any activityType matches the pattern, system will send out
+# notifications to all board members no matter they are watching
+# or tracking the board or not. Owner of the wekan server can
+# disable the feature by setting this variable to "NONE" or
+# change the pattern to any valid regex. i.e. '|' delimited
+# activityType names.
+# a) Example
+#  - name: "BIGEVENTS_PATTERN"
+#    value: "due"
+# b) All
+#  - name: "BIGEVENTS_PATTERN"
+#    value: "received|start|due|end"
+# c) Disabled
+#  - name: "BIGEVENTS_PATTERN"
+#    value: "NONE"
+# ---------------------------------------------------------------
+# ==== NOTIFY ON ASSIGN =====
+# Notify the user directly when they are added as a card member or
+# assignee. Set false to disable.
+#  - name: "NOTIFY_ON_ASSIGN"
+#    value: "true"
+# ---------------------------------------------------------------
+# ==== EMAIL DUE DATE NOTIFICATION =====
+# https://github.com/wekan/wekan/pull/2536
+# System timelines will be showing any user modification for
+# dueat startat endat receivedat, also notification to
+# the watchers and if any card is due, about due or past due.
+# 
+# Notify due days, default is None, 2 days before and on the event day
+#  - name: "NOTIFY_DUE_DAYS_BEFORE_AND_AFTER"
+#    value: "2,0"
+# 
+# Notify due at hour of day. Default every morning at 8am. Can be 0-23.
+# If env variable has parsing error, use default. Notification sent to watchers.
+#  - name: "NOTIFY_DUE_AT_HOUR_OF_DAY"
+#    value: "8"
+# -----------------------------------------------------------------
+# ==== EMAIL NOTIFICATION TIMEOUT, ms =====
+# Default: 30000 ms = 30s
+#  - name: "EMAIL_NOTIFICATION_TIMEOUT"
+#    value: "30000"
+# -----------------------------------------------------------------
+# ==== CORS =====
+# CORS: Set Access-Control-Allow-Origin header.
+#  - name: "CORS"
+#    value: "*"
+# CORS_ALLOW_HEADERS: Set Access-Control-Allow-Headers header.  "Authorization,Content-Type" is required for cross-origin use of the API.
+#  - name: "CORS_ALLOW_HEADERS"
+#    value: "Authorization,Content-Type"
+# CORS_EXPOSE_HEADERS: Set Access-Control-Expose-Headers header.  This is not needed for typical CORS situations
+#  - name: "CORS_EXPOSE_HEADERS"
+#    value: "*"
+# -----------------------------------------------------------------
+# ==== MATOMO INTEGRATION ====
+# Optional: Integration with Matomo https://matomo.org that is installed to your server
+# The address of the server where Matomo is hosted.
+#  - name: "MATOMO_ADDRESS"
+#    value: "https://example.com/matomo"
+# The value of the site ID given in Matomo server for Wekan
+#  - name: "MATOMO_SITE_ID"
+#    value: "1"
+# The option do not track which enables users to not be tracked by matomo
+#  - name: "MATOMO_DO_NOT_TRACK"
+#    value: "true"
+# The option that allows matomo to retrieve the username:
+#  - name: "MATOMO_WITH_USERNAME"
+#    value: "true"
+# -----------------------------------------------------------------
+# ==== BROWSER POLICY AND TRUSTED IFRAME URL ====
+# Enable browser policy and allow one trusted URL that can have iframe that has Wekan embedded inside.
+# Setting this to false is not recommended, it also disables all other browser policy protections
+# and allows all iframing etc. See wekan/server/policy.js
+#  - name: "BROWSER_POLICY_ENABLED"
+#    value: "true"
+# When browser policy is enabled, HTML code at this Trusted URL can have iframe that embeds Wekan inside.
+#  - name: "TRUSTED_URL"
+#    value: "https://intra.example.com"
+# -----------------------------------------------------------------
+# ==== METRICS ALLOWED IP ADDRESSES ====
+# https://github.com/wekan/wekan/blob/main/docs/Features/Metrics.md
+#  - name: "METRICS_ALLOWED_IP_ADDRESSES"
+#    value: "192.168.0.100,192.168.0.200"
+# -----------------------------------------------------------------
+# ==== OUTGOING WEBHOOKS ====
+# What to send to Outgoing Webhook, or leave out. If commented out the default values will be: cardId,listId,oldListId,boardId,comment,user,card,commentId,swimlaneId,customerField,customFieldValue
+#  - name: "WEBHOOKS_ATTRIBUTES"
+#    value: "cardId,listId,oldListId,boardId,comment,user,card,board,list,swimlane,commentId"
+# -----------------------------------------------------------------
+# ==== Debug OIDC OAuth2 etc ====
+#  - name: "DEBUG"
+#    value: "true"
+# ---------------------------------------------
+# ==== AUTOLOGIN WITH OIDC/OAUTH2 ====
+# https://github.com/wekan/wekan/blob/main/docs/Login/autologin.md
+#  - name: "OIDC_REDIRECTION_ENABLED"
+#    value: "true"
+# OIDC RP-initiated logout endpoint (end_session_endpoint). When set, the
+# "Log Out" menu redirects to this endpoint so the identity provider session
+# is also ended and the user is returned to Wekan (ROOT_URL) via
+# post_logout_redirect_uri, instead of landing on the provider home page
+# (which errors for non-admin users). See https://github.com/wekan/wekan/issues/6158
+# Keycloak example:
+#  - name: "OAUTH2_LOGOUT_ENDPOINT"
+#    value: "/realms/<keycloak realm>/protocol/openid-connect/logout"
+# -----------------------------------------------------------------
+# ==== OAUTH2 ORACLE on premise identity manager OIM ====
+#  - name: "ORACLE_OIM_ENABLED"
+#    value: "true"
+# -----------------------------------------------------------------
+# ==== OAUTH2 AZURE ====
+# https://github.com/wekan/wekan/blob/main/docs/Login/Azure/Azure.md
+# 1) Register the application with Azure. Make sure you capture
+# the application ID as well as generate a secret key.
+# 2) Configure the environment variables. This differs slightly
+# by installation type, but make sure you have the following:
+#  - name: "OAUTH2_ENABLED"
+#    value: "true"
+# Optional OAuth2 CA Cert, see https://github.com/wekan/wekan/issues/3299
+#  - name: "OAUTH2_CA_CERT"
+#    value: "ABCD1234"
+# Use OAuth2 ADFS additional changes. Also needs OAUTH2_ENABLED=true setting.
+#  - name: "OAUTH2_ADFS_ENABLED"
+#    value: "false"
+# Azure AD B2C. https://github.com/wekan/wekan/issues/5242
+#  - name: "OAUTH2_B2C_ENABLED"
+#    value: "false"
+# SECURITY (GHSA-mp7g-hj5q-gxhq): Link an OIDC login to a pre-existing
+# Wekan account (password/LDAP) with the same email. OFF by default; when
+# false an OIDC login whose email already exists is rejected instead of
+# merged, preventing account takeover via spoofed email claims. Only
+# enable if you fully trust your OIDC provider's email claims, and even
+# then the provider must send email_verified=true for the merge to happen.
+#  - name: "OAUTH2_MERGE_EXISTING_USERS"
+#    value: "false"
+# When false, OAuth2/OIDC login is refused for users that do not already
+# have a Wekan account (matched by verified email).
+#  - name: "OAUTH2_AUTO_REGISTRATION"
+#    value: "true"
+# Comma/space separated OAuth2/OIDC group names whose members become Wekan
+# admins. Empty = off.
+#  - name: "OAUTH2_ADMIN_GROUPS"
+#    value: ""
+# OAuth2 login style: popup or redirect.
+#  - name: "OAUTH2_LOGIN_STYLE"
+#    value: "redirect"
+# Application GUID captured during app registration:
+#  - name: "OAUTH2_CLIENT_ID"
+#    value: "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx"
+# Secret key generated during app registration:
+#  - name: "OAUTH2_SECRET"
+#    value: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#  - name: "OAUTH2_SECRET_FILE"
+#    value: "/run/secrets/oauth2_secret"
+#  - name: "OAUTH2_SERVER_URL"
+#    value: "https://login.microsoftonline.com/"
+#  - name: "OAUTH2_AUTH_ENDPOINT"
+#    value: "/oauth2/v2.0/authorize"
+#  - name: "OAUTH2_USERINFO_ENDPOINT"
+#    value: "https://graph.microsoft.com/oidc/userinfo"
+#  - name: "OAUTH2_TOKEN_ENDPOINT"
+#    value: "/oauth2/v2.0/token"
+# The claim name you want to map to the unique ID field:
+#  - name: "OAUTH2_ID_MAP"
+#    value: "email"
+# The claim name you want to map to the username field:
+#  - name: "OAUTH2_USERNAME_MAP"
+#    value: "email"
+# The claim name you want to map to the full name field:
+#  - name: "OAUTH2_FULLNAME_MAP"
+#    value: "name"
+# The claim name you want to map to the email field:
+#  - name: "OAUTH2_EMAIL_MAP"
+#    value: "email"
+# -----------------------------------------------------------------
+# ==== OAUTH2 Nextcloud ====
+# 1) Register the application with Nextcloud: https://your.nextcloud/index.php/settings/admin/security
+# Make sure you capture the application ID as well as generate a secret key.
+# Use https://your.wekan/_oauth/oidc for the redirect URI.
+# 2) Configure the environment variables. This differs slightly
+# by installation type, but make sure you have the following:
+#  - name: "OAUTH2_ENABLED"
+#    value: "true"
+# OAuth2 login style: popup or redirect.
+#  - name: "OAUTH2_LOGIN_STYLE"
+#    value: "redirect"
+# Application GUID captured during app registration:
+#  - name: "OAUTH2_CLIENT_ID"
+#    value: "xxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxx"
+# Secret key generated during app registration:
+#  - name: "OAUTH2_SECRET"
+#    value: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#  - name: "OAUTH2_SECRET_FILE"
+#    value: "/run/secrets/oauth2_secret"
+#  - name: "OAUTH2_SERVER_URL"
+#    value: "https://your-nextcloud.tld"
+#  - name: "OAUTH2_AUTH_ENDPOINT"
+#    value: "/index.php/apps/oauth2/authorize"
+#  - name: "OAUTH2_USERINFO_ENDPOINT"
+#    value: "/ocs/v2.php/cloud/user?format=json"
+#  - name: "OAUTH2_TOKEN_ENDPOINT"
+#    value: "/index.php/apps/oauth2/api/v1/token"
+# The claim name you want to map to the unique ID field:
+#  - name: "OAUTH2_ID_MAP"
+#    value: "id"
+# The claim name you want to map to the username field:
+#  - name: "OAUTH2_USERNAME_MAP"
+#    value: "id"
+# The claim name you want to map to the full name field:
+#  - name: "OAUTH2_FULLNAME_MAP"
+#    value: "display-name"
+# The claim name you want to map to the email field:
+#  - name: "OAUTH2_EMAIL_MAP"
+#    value: "email"
+# -----------------------------------------------------------------
+# ==== OAUTH2 KEYCLOAK ====
+# https://github.com/wekan/wekan/blob/main/docs/Login/Keycloak/Keycloak.md  <== MAPPING INFO, REQUIRED
+#  - name: "OAUTH2_ENABLED"
+#    value: "true"
+# OAuth2 login style: popup or redirect.
+#  - name: "OAUTH2_LOGIN_STYLE"
+#    value: "redirect"
+#  - name: "OAUTH2_CLIENT_ID"
+#    value: "<Keycloak create Client ID>"
+#  - name: "OAUTH2_SERVER_URL"
+#    value: "<Keycloak server url - https://keycloak.example.com>"
+#  - name: "OAUTH2_AUTH_ENDPOINT"
+#    value: "/realms/<keycloak realm>/protocol/openid-connect/auth"
+#  - name: "OAUTH2_USERINFO_ENDPOINT"
+#    value: "/realms/<keycloak realm>/protocol/openid-connect/userinfo"
+#  - name: "OAUTH2_TOKEN_ENDPOINT"
+#    value: "/realms/<keycloak realm>/protocol/openid-connect/token"
+#  - name: "OAUTH2_SECRET"
+#    value: "<keycloak client secret>"
+#  - name: "OAUTH2_SECRET_FILE"
+#    value: "/run/secrets/oauth2_secret"
+#  - name: "OAUTH2_ID_MAP"
+#    value: "sub"
+#  - name: "OAUTH2_USERNAME_MAP"
+#    value: "preferred_username"
+#  - name: "OAUTH2_EMAIL_MAP"
+#    value: "email"
+#  - name: "OAUTH2_FULLNAME_MAP"
+#    value: "name"
+# -----------------------------------------------------------------
+# ==== OAUTH2 DOORKEEPER ====
+# https://github.com/wekan/wekan/issues/1874
+# https://github.com/wekan/wekan/blob/main/docs/Login/OAuth2.md2
+# Enable the OAuth2 connection
+#  - name: "OAUTH2_ENABLED"
+#    value: "true"
+# OAuth2 docs: https://github.com/wekan/wekan/blob/main/docs/Login/OAuth2.md
+# OAuth2 login style: popup or redirect.
+#  - name: "OAUTH2_LOGIN_STYLE"
+#    value: "redirect"
+# OAuth2 Client ID.
+#  - name: "OAUTH2_CLIENT_ID"
+#    value: "abcde12345"
+# OAuth2 Secret.
+#  - name: "OAUTH2_SECRET"
+#    value: "54321abcde"
+#  - name: "OAUTH2_SECRET_FILE"
+#    value: "/run/secrets/oauth2_secret"
+# OAuth2 Server URL.
+#  - name: "OAUTH2_SERVER_URL"
+#    value: "https://chat.example.com"
+# OAuth2 Authorization Endpoint.
+#  - name: "OAUTH2_AUTH_ENDPOINT"
+#    value: "/oauth/authorize"
+# OAuth2 Userinfo Endpoint.
+#  - name: "OAUTH2_USERINFO_ENDPOINT"
+#    value: "/oauth/userinfo"
+# OAuth2 Token Endpoint.
+#  - name: "OAUTH2_TOKEN_ENDPOINT"
+#    value: "/oauth/token"
+# OAUTH2 ID Token Whitelist Fields.
+#  - name: "OAUTH2_ID_TOKEN_WHITELIST_FIELDS"
+#    value: "\"\""
+# OAUTH2 Request Permissions.
+#  - name: "OAUTH2_REQUEST_PERMISSIONS"
+#    value: "openid profile email"
+# OAuth2 ID Mapping
+#  - name: "OAUTH2_ID_MAP"
+#    value: ""
+# OAuth2 Username Mapping
+#  - name: "OAUTH2_USERNAME_MAP"
+#    value: ""
+# OAuth2 Fullname Mapping
+#  - name: "OAUTH2_FULLNAME_MAP"
+#    value: ""
+# OAuth2 Email Mapping
+#  - name: "OAUTH2_EMAIL_MAP"
+#    value: ""
+# -----------------------------------------------------------------
+# ==== LDAP: UNCOMMENT ALL TO ENABLE LDAP ====
+# https://github.com/wekan/wekan/blob/main/docs/Login/LDAP.md
+# For Snap settings see https://github.com/wekan/wekan/blob/main/docs/Platforms/FOSS/Container/Snap/Supported-settings-keys.md
+# Most settings work both on Snap and Docker below.
+# Note: Do not add single quotes '' to variables. Having spaces still works without quotes where required.
+# 
+# The default authentication method used if a user does not exist to create and authenticate. Can be set as ldap.
+# (this is set properly in the Admin Panel, changing this item does not remove Password login option)
+#  - name: "DEFAULT_AUTHENTICATION_METHOD"
+#    value: "ldap"
+# 
+# Enable or not the connection by the LDAP
+#  - name: "LDAP_ENABLE"
+#    value: "true"
+# 
+# The port of the LDAP server
+#  - name: "LDAP_PORT"
+#    value: "389"
+# 
+# The host server for the LDAP server
+#  - name: "LDAP_HOST"
+#    value: "localhost"
+# 
+# -----------------------------------------------------------------
+# ==== LDAP AD Simple Auth ====
+# 
+# Set to true, if you want to connect with Active Directory by Simple Authentication.
+# When using AD Simple Auth, LDAP_BASEDN is not needed.
+# 
+# Example:
+#  - name: "LDAP_AD_SIMPLE_AUTH"
+#    value: "true"
+# 
+# === LDAP User Authentication ===
+# 
+# a) Option to login to the LDAP server with the user's own username and password, instead of
+# an administrator key. Default: false (use administrator key).
+# 
+# b) When using AD Simple Auth, set to true, when login user is used for binding,
+# and LDAP_BASEDN is not needed.
+# 
+# Example:
+#  - name: "LDAP_USER_AUTHENTICATION"
+#    value: "true"
+# 
+# Which field is used to find the user for the user authentication. Default: uid.
+#  - name: "LDAP_USER_AUTHENTICATION_FIELD"
+#    value: "uid"
+# 
+# === LDAP Default Domain ===
+# 
+# a) In case AD SimpleAuth is configured, the default domain is appended to the given
+# loginname for creating the correct username for the bind request to AD.
+# 
+# b) The default domain of the ldap it is used to create email if the field is not map
+# correctly with the LDAP_SYNC_USER_DATA_FIELDMAP
+# 
+# Example :
+#  - name: "LDAP_DEFAULT_DOMAIN"
+#    value: "mydomain.com"
+# 
+# -----------------------------------------------------------------
+# ==== LDAP BASEDN Auth ====
+# 
+# The base DN for the LDAP Tree
+#  - name: "LDAP_BASEDN"
+#    value: "ou=user,dc=example,dc=org"
+# 
+# -----------------------------------------------------------------
+# Fallback on the default authentication method
+#  - name: "LDAP_LOGIN_FALLBACK"
+#    value: "false"
+# 
+# Reconnect to the server if the connection is lost
+#  - name: "LDAP_RECONNECT"
+#    value: "true"
+# 
+# Overall timeout, in milliseconds
+#  - name: "LDAP_TIMEOUT"
+#    value: "10000"
+# 
+# Specifies the timeout for idle LDAP connections in milliseconds
+#  - name: "LDAP_IDLE_TIMEOUT"
+#    value: "10000"
+# 
+# Connection timeout, in milliseconds
+#  - name: "LDAP_CONNECT_TIMEOUT"
+#    value: "10000"
+# 
+# If the LDAP needs a user account to search
+#  - name: "LDAP_AUTHENTIFICATION"
+#    value: "true"
+# 
+# The search user DN - You need quotes when you have spaces in parameters
+# 2 examples:
+#  - name: "LDAP_AUTHENTIFICATION_USERDN"
+#    value: "CN=ldap admin,CN=users,DC=domainmatter,DC=lan"
+#  - name: "LDAP_AUTHENTIFICATION_USERDN"
+#    value: "CN=wekan_adm,OU=serviceaccounts,OU=admin,OU=prod,DC=mydomain,DC=com"
+# 
+# The password for the search user
+#  - name: "LDAP_AUTHENTIFICATION_PASSWORD"
+#    value: "pwd"
+#  - name: "LDAP_AUTHENTIFICATION_PASSWORD_FILE"
+#    value: "/run/secrets/ldap_auth_password"
+# 
+# Enable logs for the module
+#  - name: "LDAP_LOG_ENABLED"
+#    value: "true"
+# 
+# If the sync of the users should be done in the background
+#  - name: "LDAP_BACKGROUND_SYNC"
+#    value: "false"
+# 
+# LDAP_BACKGROUND_SYNC_INTERVAL : At which interval does the background task sync in milliseconds
+# The format must be as specified in:
+# https://bunkat.github.io/later/parsers.html#text
+#  - name: "LDAP_BACKGROUND_SYNC_INTERVAL"
+#    value: "every 1 hours"
+# At which interval does the background task sync in milliseconds.
+# Leave this unset, so it uses default, and does not crash.
+# https://github.com/wekan/wekan/issues/2354#issuecomment-515305722
+#  - name: "LDAP_BACKGROUND_SYNC_INTERVAL"
+#    value: "''"
+# 
+#  - name: "LDAP_BACKGROUND_SYNC_KEEP_EXISTANT_USERS_UPDATED"
+#    value: "false"
+# 
+#  - name: "LDAP_BACKGROUND_SYNC_IMPORT_NEW_USERS"
+#    value: "false"
+# 
+# LDAP_BACKGROUND_SYNC_DISABLE_NONEXISTANT_USERS : When true, the LDAP
+# background sync disables users no longer present in LDAP (and re-enables
+# them when they reappear).
+#  - name: "LDAP_BACKGROUND_SYNC_DISABLE_NONEXISTANT_USERS"
+#    value: "false"
+# 
+# If using LDAPS: LDAP_ENCRYPTION=ssl
+#  - name: "LDAP_ENCRYPTION"
+#    value: "false"
+# 
+# The certification for the LDAPS server. Certificate needs to be included in this docker compose.yml file.
+#  - name: "LDAP_CA_CERT"
+#    value: "-----BEGIN CERTIFICATE-----MIIE+G2FIdAgIC...-----END CERTIFICATE-----"
+# 
+# Reject Unauthorized Certificate
+#  - name: "LDAP_REJECT_UNAUTHORIZED"
+#    value: "false"
+# 
+# Optional extra LDAP filters. Don't forget the outmost enclosing parentheses if needed
+#  - name: "LDAP_USER_SEARCH_FILTER"
+#    value: ""
+# 
+# base (search only in the provided DN), one (search only in the provided DN and one level deep), or sub (search the whole subtree)
+#  - name: "LDAP_USER_SEARCH_SCOPE"
+#    value: "one"
+# 
+# Which field is used to find the user, like uid / sAMAccountName
+#  - name: "LDAP_USER_SEARCH_FIELD"
+#    value: "sAMAccountName"
+# 
+# Used for pagination (0=unlimited)
+#  - name: "LDAP_SEARCH_PAGE_SIZE"
+#    value: "0"
+# 
+# The limit number of entries (0=unlimited)
+#  - name: "LDAP_SEARCH_SIZE_LIMIT"
+#    value: "0"
+# 
+# Enable the login restriction group filter. Note the authenticated ldap user must be able to query all relevant group data with own login data from ldap.
+# When true, only members of LDAP_GROUP_FILTER_GROUP_NAME are allowed to log in.
+# NOTE: This flag ONLY controls the login restriction. Admin status sync
+# (LDAP_SYNC_ADMIN_STATUS / LDAP_SYNC_ADMIN_GROUPS) and group->role sync
+# (LDAP_SYNC_GROUP_ROLES) query LDAP groups independently and do NOT require
+# this flag to be true. The group filter metadata below
+# (LDAP_GROUP_FILTER_OBJECTCLASS, LDAP_GROUP_FILTER_GROUP_MEMBER_ATTRIBUTE,
+# LDAP_GROUP_FILTER_GROUP_MEMBER_FORMAT, LDAP_GROUP_FILTER_GROUP_ID_ATTRIBUTE)
+# must still be configured for any group search to work.
+#  - name: "LDAP_GROUP_FILTER_ENABLE"
+#    value: "false"
+# 
+# Where the GROUPS are, when they are not under LDAP_BASEDN. Leave this
+# unset when users and groups share one subtree: the group searches then
+# use LDAP_BASEDN, exactly as they always have. Set it when the directory
+# keeps them apart - ou=groups beside ou=people is a common layout - or
+# every group search runs under the USER base, finds nothing, and
+# LDAP_GROUP_FILTER_ENABLE=true refuses every login (wekan/wekan#5539).
+#  - name: "LDAP_GROUP_BASEDN"
+#    value: "ou=groups,dc=example,dc=org"
+# 
+# The object class for filtering. Example: group
+#  - name: "LDAP_GROUP_FILTER_OBJECTCLASS"
+#    value: ""
+# 
+# The attribute of a group identifying it. Example: cn
+#  - name: "LDAP_GROUP_FILTER_GROUP_ID_ATTRIBUTE"
+#    value: ""
+# 
+# The attribute inside a group object listing its members. Example: member
+#  - name: "LDAP_GROUP_FILTER_GROUP_MEMBER_ATTRIBUTE"
+#    value: ""
+# 
+# The format of the value of LDAP_GROUP_FILTER_GROUP_MEMBER_ATTRIBUTE. Example: 'dn' if the users dn is saved as value into the attribute.
+#  - name: "LDAP_GROUP_FILTER_GROUP_MEMBER_FORMAT"
+#    value: ""
+# 
+# The group name (id) that matches all users.
+#  - name: "LDAP_GROUP_FILTER_GROUP_NAME"
+#    value: ""
+# 
+# LDAP_UNIQUE_IDENTIFIER_FIELD : This field is sometimes class GUID (Globally Unique Identifier). Example: guid
+#  - name: "LDAP_UNIQUE_IDENTIFIER_FIELD"
+#    value: ""
+# 
+# LDAP_UTF8_NAMES_SLUGIFY : Convert the username to utf8
+#  - name: "LDAP_UTF8_NAMES_SLUGIFY"
+#    value: "true"
+# 
+# LDAP_USERNAME_FIELD : Which field contains the ldap username. username / sAMAccountName
+#  - name: "LDAP_USERNAME_FIELD"
+#    value: "sAMAccountName"
+# 
+# LDAP_FULLNAME_FIELD : Which field contains the ldap fullname. fullname / sAMAccountName
+#  - name: "LDAP_FULLNAME_FIELD"
+#    value: "fullname"
+# 
+#  - name: "LDAP_MERGE_EXISTING_USERS"
+#    value: "false"
+# 
+# Allow existing account matching by e-mail address when username does not match
+#  - name: "LDAP_EMAIL_MATCH_ENABLE"
+#    value: "true"
+# 
+# LDAP_EMAIL_MATCH_REQUIRE : require existing account matching by e-mail address when username does match
+#  - name: "LDAP_EMAIL_MATCH_REQUIRE"
+#    value: "true"
+# 
+# LDAP_EMAIL_MATCH_VERIFIED : require existing account email address to be verified for matching
+#  - name: "LDAP_EMAIL_MATCH_VERIFIED"
+#    value: "true"
+# 
+# LDAP_EMAIL_FIELD : which field contains the LDAP e-mail address
+#  - name: "LDAP_EMAIL_FIELD"
+#    value: "mail"
+# -----------------------------------------------------------------
+#  - name: "LDAP_SYNC_USER_DATA"
+#    value: "false"
+# 
+#  - name: "LDAP_SYNC_USER_DATA_FIELDMAP"
+#    value: "{\"cn\":\"name\", \"mail\":\"email\"}"
+# 
+#  - name: "LDAP_SYNC_GROUP_ROLES"
+#    value: ""
+# 
+# The default domain of the ldap it is used to create email if the field is not map correctly
+# with the LDAP_SYNC_USER_DATA_FIELDMAP is defined in setting LDAP_DEFAULT_DOMAIN above.
+# 
+# Enable/Disable syncing of admin status based on ldap groups:
+# NOTE: Admin status sync and group->role sync (LDAP_SYNC_GROUP_ROLES) query
+# LDAP groups on their own. They no longer require LDAP_GROUP_FILTER_ENABLE=true,
+# which only controls the login restriction filter. The group filter metadata
+# (LDAP_GROUP_FILTER_OBJECTCLASS, LDAP_GROUP_FILTER_GROUP_MEMBER_ATTRIBUTE,
+# LDAP_GROUP_FILTER_GROUP_MEMBER_FORMAT, LDAP_GROUP_FILTER_GROUP_ID_ATTRIBUTE)
+# must still be configured for the group search to work.
+#  - name: "LDAP_SYNC_ADMIN_STATUS"
+#    value: "true"
+# 
+# Comma separated list of admin group names to sync.
+#  - name: "LDAP_SYNC_ADMIN_GROUPS"
+#    value: "group1,group2"
+# 
+# When true, sync a user's LDAP groups as Wekan Organizations.
+#  - name: "LDAP_SYNC_ORGANIZATIONS"
+#    value: "false"
+# 
+# Comma separated allowlist of LDAP group names/patterns to sync as Organizations.
+# Wildcards supported: * (any chars), ? (single char). Empty = all of the user's groups.
+#  - name: "LDAP_SYNC_ORGANIZATIONS_GROUPS"
+#    value: ""
+# 
+# When true, sync a user's LDAP groups as Wekan Teams.
+#  - name: "LDAP_SYNC_TEAMS"
+#    value: "false"
+# 
+# Comma separated allowlist of LDAP group names/patterns to sync as Teams.
+# Wildcards supported: * (any chars), ? (single char). Empty = all of the user's groups.
+#  - name: "LDAP_SYNC_TEAMS_GROUPS"
+#    value: ""
+# ---------------------------------------------------------------------
+# Login to LDAP automatically with HTTP header.
+# In below example for siteminder, at right side of = is header name.
+#  - name: "HEADER_LOGIN_ID"
+#    value: "HEADERUID"
+#  - name: "HEADER_LOGIN_FIRSTNAME"
+#    value: "HEADERFIRSTNAME"
+#  - name: "HEADER_LOGIN_LASTNAME"
+#    value: "HEADERLASTNAME"
+#  - name: "HEADER_LOGIN_EMAIL"
+#    value: "HEADEREMAILADDRESS"
+# SECURITY (GHSA-jggc-qvfc-jr6x): comma-separated allowlist of source IPs
+# permitted to use header login. The source IP is the real TCP peer of the
+# connection (your reverse proxy), NOT the spoofable X-Forwarded-For header.
+# REQUIRED when header login is enabled: if empty/unset, header login fails
+# CLOSED and authenticates no one.
+#  - name: "HEADER_LOGIN_TRUSTED_IPS"
+#    value: "127.0.0.1,10.0.0.2"
+# Optional: if WeKan sits behind MULTIPLE proxy hops, list the intermediate
+# proxy IPs here. X-Forwarded-For is then honored ONLY when the immediate
+# TCP peer is one of these trusted proxies, and the right-most hop that is
+# not itself a trusted proxy (the real client) is matched against
+# HEADER_LOGIN_TRUSTED_IPS above.
+#  - name: "HEADER_LOGIN_TRUSTED_PROXIES"
+#    value: "10.0.0.1,10.0.0.2"
+# ---------------------------------------------------------------------
+# ==== LOGOUT TIMER, probably does not work yet ====
+# LOGOUT_WITH_TIMER : Enables or not the option logout with timer
+# example : LOGOUT_WITH_TIMER=true
+#  - name: "LOGOUT_WITH_TIMER"
+#    value: ""
+# 
+# LOGOUT_IN : The number of days
+# example : LOGOUT_IN=1
+#  - name: "LOGOUT_IN"
+#    value: ""
+# 
+# LOGOUT_ON_HOURS : The number of hours
+# example : LOGOUT_ON_HOURS=9
+#  - name: "LOGOUT_ON_HOURS"
+#    value: ""
+# 
+# LOGOUT_ON_MINUTES : The number of minutes
+# example : LOGOUT_ON_MINUTES=55
+#  - name: "LOGOUT_ON_MINUTES"
+#    value: ""
+# -------------------------------------------------------------------
+# Hide password login form
+#  - name: "PASSWORD_LOGIN_ENABLED"
+#    value: "true"
+# -------------------------------------------------------------------
+#  - name: "CAS_ENABLED"
+#    value: "true"
+#  - name: "CAS_BASE_URL"
+#    value: "https://cas.example.com/cas"
+#  - name: "CAS_LOGIN_URL"
+#    value: "https://cas.example.com/login"
+#  - name: "CAS_VALIDATE_URL"
+#    value: "https://cas.example.com/cas/p3/serviceValidate"
+# ---------------------------------------------------------------------
+#  - name: "SAML_ENABLED"
+#    value: "true"
+#  - name: "SAML_PROVIDER"
+#    value: ""
+#  - name: "SAML_ENTRYPOINT"
+#    value: ""
+#  - name: "SAML_ISSUER"
+#    value: ""
+#  - name: "SAML_CERT"
+#    value: ""
+#  - name: "SAML_IDPSLO_REDIRECTURL"
+#    value: ""
+#  - name: "SAML_PRIVATE_KEYFILE"
+#    value: ""
+#  - name: "SAML_PUBLIC_CERTFILE"
+#    value: ""
+#  - name: "SAML_IDENTIFIER_FORMAT"
+#    value: ""
+#  - name: "SAML_LOCAL_PROFILE_MATCH_ATTRIBUTE"
+#    value: ""
+#  - name: "SAML_ATTRIBUTES"
+#    value: ""
+# ---------------------------------------------------------------------
+# Wait spinner to use
+#  - name: "WAIT_SPINNER"
+#    value: "Bounce"
+# ---------------------------------------------------------------------
+# Wait for MongoDB to be healthy (replica-set primary elected) before
+# starting WeKan, so index creation does not crash with "Topology is closed".
+# If you use FerretDB instead, comment out the wekandb block below and
+# uncomment the wekan-ferretdb block.
+## ---------------------------------------------------------------------------
 
 # Additional environment variables for Wekan mapped from Secret or ConfigMap
 extraEnvFrom: ""
@@ -240,24 +1164,127 @@ securityContext: {}
 
 extraDeploy: []
 # ------------------------------------------------------------------------------
-# MongoDB:
-# ref: https://github.com/groundhog2k/helm-charts/tree/master/charts/mongodb
+# FerretDB: the database this chart installs (charts#55).
+#
+# It is defined BY THIS CHART (templates/ferretdb-statefulset.yaml and
+# ferretdb-service.yaml) rather than pulled in as a dependency, which is the fix
+# for charts#54: the MONGO_URL was assembled from another chart's naming
+# convention and pointed at a host that did not exist. The Service name is this
+# chart's own now.
+#
+# The image needs no configuration - SQLite handler, /state, port 27017,
+# telemetry off are its own defaults - and is published to three registries by
+# https://github.com/wekan/FerretDB/blob/main-v1/.github/workflows/docker.yml :
+#   ghcr.io/wekan/ferretdb   quay.io/wekan/ferretdb   wekanteam/ferretdb
+# ------------------------------------------------------------------------------
+
+ferretdb:
+  enabled: true
+  image:
+    repository: ghcr.io/wekan/ferretdb
+    tag: latest
+    pullPolicy: IfNotPresent
+  # Where the SQLite data lives inside the container. The image declares /state
+  # as a VOLUME and defaults its own FERRETDB_STATE_DIR / FERRETDB_SQLITE_URL to
+  # it; changing this changes both.
+  dataPath: /state
+  service:
+    type: ClusterIP
+    port: 27017
+    annotations: {}
+  storage:
+    size: 8Gi
+    accessMode: ReadWriteOnce
+    # storageClassName: ""
+    # Use a PersistentVolumeClaim you created yourself. When set, no
+    # volumeClaimTemplate is generated.
+    # existingClaim: ""
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 2Gi
+      cpu: 1000m
+  # The image runs as uid/gid 1000 (ferretdb) from a `scratch` base - no shell,
+  # no root. fsGroup lets it write the mounted volume on clusters that do not
+  # chown it for you.
+  podSecurityContext:
+    fsGroup: 1000
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+  # A TCP check, not a MongoDB ping: the image has no shell and no mongosh to run
+  # one with.
+  readinessProbe:
+    tcpSocket:
+      port: mongo
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6
+  livenessProbe:
+    tcpSocket:
+      port: mongo
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    timeoutSeconds: 5
+    failureThreshold: 6
+  # Extra environment for the FerretDB container, e.g. FERRETDB_LOG_LEVEL.
+  env: []
+  # fullnameOverride: ""
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# ------------------------------------------------------------------------------
+# Using a database you run yourself instead.
+#
+# Set ferretdb.enabled=false and give the URL here - a MongoDB 7 of your own, a
+# FerretDB elsewhere, or a managed service. `directConnection=true` is appended
+# unless your URL already sets it (wekan/wekan#6582: without it the driver drops
+# the host you wrote and dials whatever the server advertises, which for FerretDB
+# is 0.0.0.0:27017 and therefore the WeKan pod itself).
+#
+# The old `mongodb.url` value is still read, so an existing values.yaml that
+# points at an external MongoDB keeps working after this upgrade.
+# ------------------------------------------------------------------------------
+
+externalDatabase:
+  url: ""
+  # url: "mongodb://user:password@mongodb.example.com:27017/wekan?authSource=admin"
+
+# ------------------------------------------------------------------------------
+# MongoDB (removed as a bundled dependency in chart 10.86.0).
+#
+# The chart used to install groundhog2k's MongoDB chart and build a MONGO_URL out
+# of Bitnami's per-pod DNS names, which is charts#54 - the two never matched.
+# WeKan itself has moved to FerretDB (charts#55), so the bundled database is
+# FerretDB above.
+#
+# WHAT TO DO WITH THE DATA YOU ALREADY HAVE. Nothing here deletes it: the
+# MongoDB StatefulSet and its PersistentVolumeClaim are left exactly as they are
+# when you upgrade, and the fastest route is to keep using them -
+#
+#   ferretdb:
+#     enabled: false
+#   externalDatabase:
+#     url: "mongodb://<release>-mongodb:27017/wekan"
+#
+# (that is the Service the groundhog2k chart really creates, which is what the
+# old computed URL got wrong). To move onto FerretDB instead, dump from MongoDB
+# and restore into it - both speak the MongoDB wire protocol, so mongodump and
+# mongorestore work unchanged.
+#
+# `mongodb.url` is still honoured for compatibility; `mongodb.enabled` no longer
+# installs anything.
 # ------------------------------------------------------------------------------
 
 mongodb:
-  enabled: true
-  image:
-    # At the time of writing the mongodb chart defaults to version 8, but WeKan
-    # needs 7.
-    tag: 7.0.34
-  # settings:
-  #   rootUsername: admin
-  #   rootPassword:
-  # userDatabase:
-  #   name:
-  #   user:
-  #   password:
-  storage:
-    requestedSize: 2Gi
-    # Optional specify an existing PVC. If you do, unset the `requestedSize`.
-    # persistentVolumeClaimName:
+  enabled: false
+  url: ""

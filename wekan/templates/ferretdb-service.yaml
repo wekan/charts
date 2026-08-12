@@ -1,0 +1,32 @@
+{{- if .Values.ferretdb.enabled }}
+{{/*
+One ClusterIP Service, and its name is the whole of what WeKan needs to reach the
+database (charts#54). No headless service, no per-pod DNS, no replica set: the
+address in MONGO_URL is this name, and this file is what creates it.
+*/}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "wekan.ferretdb.fullname" . }}
+  labels:
+    app: {{ template "wekan.name" . }}
+    chart: {{ template "wekan.chart" . }}
+    component: ferretdb
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- with .Values.ferretdb.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.ferretdb.service.type }}
+  ports:
+    - name: mongo
+      port: {{ .Values.ferretdb.service.port }}
+      targetPort: mongo
+      protocol: TCP
+  selector:
+    app: {{ template "wekan.name" . }}
+    component: ferretdb
+    release: {{ .Release.Name }}
+{{- end }}

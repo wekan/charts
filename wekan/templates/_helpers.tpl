@@ -59,34 +59,65 @@ Create the name of the service account to use for the api component
 {{- end -}}
 
 {{/*
-Create a default fully qualified mongodb-replicaset name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+The FerretDB Service name. It is THIS chart's, which is the point of charts#54:
+the old helper guessed at another chart's naming - Bitnami's per-pod
+`<release>-mongodb-0.<release>-mongodb-headless` - while the chart WeKan actually
+depended on (groundhog2k) called its services `<release>-mongodb` and
+`<release>-mongodb-internal`. The name WeKan dialled therefore did not exist:
+
+  MongoNetworkError: getaddrinfo ENOTFOUND wekan-mongodb-0.wekan-mongodb
+
+There is nothing to guess now. templates/ferretdb-service.yaml creates a Service
+with exactly this name.
 */}}
-{{- define "wekan.mongodb.svcname" -}}
-{{- $name := default "mongodb" (index .Values "mongodb" "nameOverride") -}}
-{{- if eq .Values.mongodb.architecture "replicaset" }}
-{{- printf "%s-%s-headless" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- define "wekan.ferretdb.fullname" -}}
+{{- if .Values.ferretdb.fullnameOverride -}}
+{{- .Values.ferretdb.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s-ferretdb" .Release.Name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Create the MongoDB URL. If MongoDB is installed as part of this chart, use k8s service discovery,
-else use user-provided URL.
+The database URL WeKan connects to.
+
+  ferretdb.enabled          the FerretDB this chart installs
+  externalDatabase.url      whatever the admin runs themselves (MongoDB 7,
+                            FerretDB elsewhere, a managed service)
+
+`directConnection=true` is REQUIRED and not decoration (wekan/wekan#6582). A
+FerretDB started with a replica-set name advertises, in its handshake, a replica
+set whose only member is its own LISTEN address - 0.0.0.0:27017. Without
+directConnection the MongoDB driver performs replica-set discovery: it DROPS the
+host written here and dials the advertised 0.0.0.0:27017, which inside the WeKan
+pod is the WeKan pod, and the connection dies as
+
+  MongoServerSelectionError: connect ECONNREFUSED 0.0.0.0:27017
+
+directConnection=true keeps the driver on the host this URL names. It is appended
+to a user-supplied URL as well, unless that URL already sets it - a URL that
+worked before is left exactly as it was.
+
+The old `mongodb.url` value is still honoured, so a chart upgrade does not lose
+somebody's external database.
 */}}
 {{- define "mongodb.url" -}}
-{{- if (index .Values "mongodb" "enabled") -}}
-  {{- $count := (int (index .Values "mongodb" "replicaCount")) -}}
-  {{- $release := .Release.Name -}}
-  {{- $mongodbSvcName := include "wekan.mongodb.svcname" . -}}
-  {{- if gt $count 1 -}}
-    {{- $replicaSetName := (index .Values "mongodb" "replicaSetName") -}}
-    mongodb://{{- range $v := until $count }}{{ $release }}-mongodb-{{ $v }}.{{ $mongodbSvcName }}:27017{{ if ne $v (sub $count 1) }},{{- end -}}{{- end -}}/{{ .Values.dbname }}?replicaSet={{ $replicaSetName }}
-  {{- else -}}
-    mongodb://{{ $release }}-mongodb-0.{{ $mongodbSvcName }}:27017/{{ .Values.dbname }}
-  {{- end -}}
+{{- $external := "" -}}
+{{- if .Values.externalDatabase -}}
+  {{- $external = default "" .Values.externalDatabase.url -}}
+{{- end -}}
+{{- if and (not $external) .Values.mongodb -}}
+  {{- $external = default "" (index .Values "mongodb" "url") -}}
+{{- end -}}
+{{- if and .Values.ferretdb.enabled (not $external) -}}
+  {{- printf "mongodb://%s:%v/%s?directConnection=true" (include "wekan.ferretdb.fullname" .) .Values.ferretdb.service.port .Values.dbname -}}
 {{- else -}}
-  {{- index .Values "mongodb" "url" -}}
+  {{- if contains "directConnection" $external -}}
+    {{- $external -}}
+  {{- else if contains "?" $external -}}
+    {{- printf "%s&directConnection=true" $external -}}
+  {{- else -}}
+    {{- printf "%s?directConnection=true" $external -}}
+  {{- end -}}
 {{- end -}}
 {{- end -}}
