@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: "11.05"
+appVersion: "11.06"
 # charts#55: the database is FerretDB, and charts#54 is why it is not a
 # dependency on somebody else's chart any more. The old MongoDB dependency
 # (groundhog2k) named its services one way while wekan/templates/_helpers.tpl
@@ -13,15 +13,15 @@ appVersion: "11.05"
 annotations:
   artifacthub.io/changes: |
     - kind: changed
-      description: WeKan updated to v11.05
+      description: WeKan updated to v11.06
       links:
         - name: Release notes
-          url: https://github.com/wekan/wekan/releases/tag/v11.05
+          url: https://github.com/wekan/wekan/releases/tag/v11.06
         - name: CHANGELOG
           url: https://github.com/wekan/wekan/blob/main/CHANGELOG.md
   artifacthub.io/images: |
     - name: wekan
-      image: ghcr.io/wekan/wekan:v11.05
+      image: ghcr.io/wekan/wekan:v11.06
     - name: ferretdb
       image: ghcr.io/wekan/ferretdb:latest
 description: Open Source kanban
@@ -44,4 +44,4 @@ name: wekan
 sources:
   - https://github.com/wekan/wekan
 type: application
-version: 11.05.0
+version: 11.06.0
