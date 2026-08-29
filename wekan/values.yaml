@@ -1251,7 +1251,9 @@ ferretdb:
     # wekan-built mirror, unlike the ones above.
     repository: ghcr.io/wekan/ferretdb
     tag: latest
-    pullPolicy: IfNotPresent
+    # The tag deliberately tracks each wekan/FerretDB release. Always ask the
+    # registry so a restarted or recreated pod cannot reuse an older node cache.
+    pullPolicy: Always
   # Where the SQLite data lives inside the container. The image declares /state
   # as a VOLUME and defaults its own FERRETDB_STATE_DIR / FERRETDB_SQLITE_URL to
   # it; changing this changes both.
