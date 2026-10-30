@@ -1040,6 +1040,11 @@ env:
 #  - name: "USERS_DISABLE_INACTIVE_AFTER_DAYS"
 #    value: "180"
 # ---------------------------------------------------------------
+# LOGOUT_IDLE_MINUTES : Sign a browser session out after this many minutes without a key press, click,
+# touch or scroll. Empty or 0 = off (default). REST API tokens are not affected.
+#  - name: "LOGOUT_IDLE_MINUTES"
+#    value: "30"
+# ---------------------------------------------------------------
 # REQUIRE_2FA : Compulsory two-factor authentication for accounts that sign in with a WeKan password:
 # off (default), admins or all. They must set it up right after signing in.
 #  - name: "REQUIRE_2FA"
