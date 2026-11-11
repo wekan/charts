@@ -1139,6 +1139,11 @@ env:
 # 60000).
 #  - name: "WEKAN_IMPORT_RUN_STALE_MS"
 #    value: "600000"
+# EVENTLOG_RETENTION_DAYS : Days after which an Admin Panel / Problems event
+# is deleted by the daily sweep, so resolved problems age out; a recurring
+# problem keeps a recent date and stays. Default 90, 0 = keep forever.
+#  - name: "EVENTLOG_RETENTION_DAYS"
+#    value: "90"
 # ---------------------------------------------------------------
 # ATTACHMENT RETENTION (models/lib/attachmentRetention.js). Off unless set.
 # ATTACHMENTS_RETENTION_DAYS : once a night, delete card attachments older
