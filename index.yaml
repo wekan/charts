@@ -2,6 +2,36 @@ apiVersion: v1
 entries:
   wekan:
   - annotations:
+      artifacthub.io/changes: "- kind: changed\n  description: WeKan updated to v13.25\n  links:\n    - name: Release notes\n      url: https://github.com/wekan/wekan/releases/tag/v13.25\n    - name: CHANGELOG\n      url: https://github.com/wekan/wekan/blob/main/CHANGELOG.md\n"
+      artifacthub.io/images: "- name: wekan\n  image: ghcr.io/wekan/wekan:v13.25\n- name: ferretdb\n  image: ghcr.io/wekan/ferretdb:latest\n"
+    apiVersion: v2
+    appVersion: '13.25'
+    created: '2026-11-21T14:41:47.667257+00:00'
+    description: Open Source kanban
+    digest: e5587b895adc4daac6951cc1a81e7436b91d5b19d90295814f8e6ce625a5699a
+    home: https://wekan.fi
+    icon: https://wekan.fi/wekan-logo.svg
+    keywords:
+    - kanban
+    maintainers:
+    - email: support@wekan.fi
+      name: wekan
+    - email: x@xet7.org
+      name: xet7
+    - email: github@randall.cc
+      name: technotaff
+    - email: jiangyt.cn@gmail.com
+      name: jiangytcn
+    - email: varac@varac.net
+      name: varac
+    name: wekan
+    sources:
+    - https://github.com/wekan/wekan
+    type: application
+    urls:
+    - https://wekan.github.io/charts/wekan-13.25.0.tgz
+    version: 13.25.0
+  - annotations:
       artifacthub.io/changes: "- kind: changed\n  description: WeKan updated to v13.24\n  links:\n    - name: Release notes\n      url: https://github.com/wekan/wekan/releases/tag/v13.24\n    - name: CHANGELOG\n      url: https://github.com/wekan/wekan/blob/main/CHANGELOG.md\n"
       artifacthub.io/images: "- name: wekan\n  image: ghcr.io/wekan/wekan:v13.24\n- name: ferretdb\n  image: ghcr.io/wekan/ferretdb:latest\n"
     apiVersion: v2
@@ -13349,4 +13379,4 @@ entries:
     urls:
     - https://wekan.github.io/charts/wekan-1.1.0.tgz
     version: 1.1.0
-generated: '2026-11-21T03:09:28.529380+00:00'
+generated: '2026-11-21T14:41:47.667257+00:00'
