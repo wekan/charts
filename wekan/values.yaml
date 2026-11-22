@@ -1144,6 +1144,15 @@ env:
 # problem keeps a recent date and stays. Default 90, 0 = keep forever.
 #  - name: "EVENTLOG_RETENTION_DAYS"
 #    value: "90"
+# LOGIN_ADDRESS_RETENTION_DAYS : Days a sign-in address is kept after its last
+# use, on the account and in the login reports. Default 365; 0 keeps them.
+#  - name: "LOGIN_ADDRESS_RETENTION_DAYS"
+#    value: "365"
+# CLOUD : The Cloud Admin container's own domain, e.g. cloud.wekan.fi:
+# only then is there a Cloud Panel (Admin Panel / Cloud), and only at that
+# address. Empty: none. Never set from the browser.
+#  - name: "CLOUD"
+#    value: "cloud.example.com"
 # ---------------------------------------------------------------
 # ATTACHMENT RETENTION (models/lib/attachmentRetention.js). Off unless set.
 # ATTACHMENTS_RETENTION_DAYS : once a night, delete card attachments older
