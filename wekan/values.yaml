@@ -33,7 +33,7 @@ serviceAccounts:
 ##
 image:
   repository: ghcr.io/wekan/wekan
-  tag: v13.27
+  tag: v13.28
   pullPolicy: IfNotPresent
 
 ## Configuration for wekan component
@@ -396,8 +396,9 @@ env:
 # ==== ADMIN PANEL ALLOWED IP ADDRESSES ====
 # https://github.com/wekan/wekan/blob/main/docs/Features/Admin-Panel/Admin-Panel-Allowed-Addresses.md
 # The IPv4 and IPv6 addresses and CIDR ranges the Admin Panel and the admin
-# REST API can be used from. Set here, it wins over the Admin Panel list.
-# any = no restriction, the way back in after a list that locked you out.
+# REST API can be used from. Set here, it wins over Admin Panel / Settings /
+# Privacy and security. any = no restriction, the way back in after a list
+# that locked you out. Unset = the Admin Panel list decides.
 #  - name: "ADMIN_PANEL_ALLOWED_IP_ADDRESSES"
 #    value: "192.168.0.0/24,2001:db8::/32"
 # -----------------------------------------------------------------
@@ -411,7 +412,7 @@ env:
 #    value: "true"
 # ---------------------------------------------
 # ==== AUTOLOGIN WITH OIDC/OAUTH2 ====
-# https://github.com/wekan/wekan/blob/main/docs/Login/autologin.md
+# https://github.com/wekan/wekan/blob/main/docs/Features/Login-Page/autologin.md
 #  - name: "OIDC_REDIRECTION_ENABLED"
 #    value: "true"
 # OIDC RP-initiated logout endpoint (end_session_endpoint). When set, the
@@ -540,7 +541,7 @@ env:
 #    value: "email"
 # -----------------------------------------------------------------
 # ==== OAUTH2 KEYCLOAK ====
-# https://github.com/wekan/wekan/blob/main/docs/Login/Keycloak/Keycloak.md  <== MAPPING INFO, REQUIRED
+# https://github.com/wekan/wekan/blob/main/docs/Features/Login-Page/Keycloak/Keycloak.md  <== MAPPING INFO, REQUIRED
 #  - name: "OAUTH2_ENABLED"
 #    value: "true"
 # OAuth2 login style: redirect (default) or popup.
@@ -1142,6 +1143,11 @@ env:
 # (Admin Panel / Problems / Memory usage). Default on.
 #  - name: "WEKAN_RAM_MONITOR"
 #    value: "false"
+# CLOUD : The Cloud Admin container's own domain, e.g. cloud.wekan.fi:
+# only then is there a Cloud Panel (Admin Panel / Cloud), and only at that
+# address. Empty: none. Never set from the browser.
+#  - name: "CLOUD"
+#    value: "cloud.example.com"
 # WEKAN_IMPORT_RUN_STALE_MS : Milliseconds after which an import with no
 # progress counts as interrupted and can be resumed or discarded (at least
 # 60000).
@@ -1156,11 +1162,6 @@ env:
 # use, on the account and in the login reports. Default 365; 0 keeps them.
 #  - name: "LOGIN_ADDRESS_RETENTION_DAYS"
 #    value: "365"
-# CLOUD : The Cloud Admin container's own domain, e.g. cloud.wekan.fi:
-# only then is there a Cloud Panel (Admin Panel / Cloud), and only at that
-# address. Empty: none. Never set from the browser.
-#  - name: "CLOUD"
-#    value: "cloud.example.com"
 # ---------------------------------------------------------------
 # ATTACHMENT RETENTION (models/lib/attachmentRetention.js). Off unless set.
 # ATTACHMENTS_RETENTION_DAYS : once a night, delete card attachments older
