@@ -193,11 +193,14 @@ env:
 #    value: "/run/secrets/mail_url"
 # ---------------------------------------------------------------
 # https://github.com/wekan/wekan/issues/3585#issuecomment-1021522132
-# Add more Node heap, this is done by default at Dockerfile:
+# The image sets the Node heap itself, to 60 % of the container's memory limit
+# (at most 4096 MiB); NODE_OPTIONS here replaces that:
 #  - name: "NODE_OPTIONS"
-#    value: "\"--max_old_space_size=4096\""
-# Add more stack, this is done at Dockerfile:
-#   bash -c "ulimit -s 65500; exec node --stack-size=65500 main.js"
+#    value: "--max-old-space-size=4096"
+# The image is distroless (no shell), and its Node.js entrypoint does not raise
+# the stack ulimit. V8's own stack limit is far below the default, so this only
+# matters with a larger --stack-size in NODE_OPTIONS - and a pod's stack ulimit
+# is the container runtime's setting, not the chart's.
 # ---------------------------------------------------------------
 # ==== OPTIONAL: KADIRA PERFORMANCE MONITORING FOR METEOR ====
 # https://github.com/edemaine/kadira-compose
