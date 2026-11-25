@@ -33,7 +33,7 @@ serviceAccounts:
 ##
 image:
   repository: ghcr.io/wekan/wekan
-  tag: v13.30
+  tag: v13.31
   pullPolicy: IfNotPresent
 
 ## Configuration for wekan component
@@ -193,14 +193,11 @@ env:
 #    value: "/run/secrets/mail_url"
 # ---------------------------------------------------------------
 # https://github.com/wekan/wekan/issues/3585#issuecomment-1021522132
-# The image sets the Node heap itself, to 60 % of the container's memory limit
-# (at most 4096 MiB); NODE_OPTIONS here replaces that:
+# Add more Node heap, this is done by default at Dockerfile:
 #  - name: "NODE_OPTIONS"
-#    value: "--max-old-space-size=4096"
-# The image is distroless (no shell), and its Node.js entrypoint does not raise
-# the stack ulimit. V8's own stack limit is far below the default, so this only
-# matters with a larger --stack-size in NODE_OPTIONS - and a pod's stack ulimit
-# is the container runtime's setting, not the chart's.
+#    value: "\"--max_old_space_size=4096\""
+# Add more stack, this is done at Dockerfile:
+#   bash -c "ulimit -s 65500; exec node --stack-size=65500 main.js"
 # ---------------------------------------------------------------
 # ==== OPTIONAL: KADIRA PERFORMANCE MONITORING FOR METEOR ====
 # https://github.com/edemaine/kadira-compose
@@ -214,7 +211,7 @@ env:
 #    value: ""
 # ---------------------------------------------------------------
 # ==== OPTIONAL: LOGS AND STATS ====
-# https://github.com/wekan/wekan/blob/main/docs/Features/Logs.md
+# https://github.com/wekan/wekan/blob/main/docs/Features/Troubleshooting/Logs.md
 #
 # Daily export of Wekan changes as JSON to Logstash and ElasticSearch / Kibana (ELK)
 # https://github.com/wekan/wekan-logstash
@@ -544,7 +541,7 @@ env:
 #    value: "email"
 # -----------------------------------------------------------------
 # ==== OAUTH2 KEYCLOAK ====
-# https://github.com/wekan/wekan/blob/main/docs/Features/Login-Page/Keycloak/Keycloak.md  <== MAPPING INFO, REQUIRED
+# https://github.com/wekan/wekan/blob/main/docs/Features/Login-Page/Keycloak/README.md  <== MAPPING INFO, REQUIRED
 #  - name: "OAUTH2_ENABLED"
 #    value: "true"
 # OAuth2 login style: redirect (default) or popup.
@@ -1165,52 +1162,36 @@ env:
 # use, on the account and in the login reports. Default 365; 0 keeps them.
 #  - name: "LOGIN_ADDRESS_RETENTION_DAYS"
 #    value: "365"
-# LOGIN_ADDRESS_RECORDED : false records no sign-in address at all - not on the account,
-# not in the login reports. The lockout still counts failed sign-ins.
+# LOGIN_ADDRESS_RECORDED : false records no sign-in address at all: not on the account, not in the login reports. The lockout still counts failed sign-ins per address.
 #  - name: "LOGIN_ADDRESS_RECORDED"
-#    value: "false"
-# USERS_ANONYMIZE_INACTIVE_AFTER_DAYS : days after an account was disabled for inactivity that it is
-# anonymised. Off unless set; administrators are never anonymised.
+#    value: "true"
+# USERS_ANONYMIZE_INACTIVE_AFTER_DAYS : Days after an account was disabled for inactivity (USERS_DISABLE_INACTIVE_AFTER_DAYS) that it is anonymised, as Member Settings / Anonymize does. Off unless set; administrators are never anonymised.
 #  - name: "USERS_ANONYMIZE_INACTIVE_AFTER_DAYS"
-#    value: "90"
-# REGISTRATION_MINIMUM_AGE : the sign-up form asks "I am at least N years old" and the server
-# refuses a password sign-up without it. Off unless set.
+#    value: ""
+# REGISTRATION_MINIMUM_AGE : Ask "I am at least N years old" on the sign-up form and refuse a password sign-up without it (GDPR Art. 8: 16, or 13-16 where a country lowers it; COPPA: 13). Off unless set; no birth date is stored.
 #  - name: "REGISTRATION_MINIMUM_AGE"
 #    value: "16"
-# BACKUP_PASSPHRASE : encrypt every Admin Panel backup with this passphrase (at least
-# 16 characters); restoring needs the same one. Better from a Secret.
+# BACKUP_PASSPHRASE : Encrypt every Admin Panel backup with this passphrase (AES-256-GCM, at least 16 characters), on disk and in cloud storage; restoring one needs the same passphrase. Keep it somewhere other than the backups.
 #  - name: "BACKUP_PASSPHRASE"
-#    valueFrom:
-#      secretKeyRef:
-#        name: wekan-backup
-#        key: passphrase
-# ATTACHMENTS_PASSPHRASE : lets Admin Panel / Attachments / Encrypt encrypt the attachments
-# on disk (at least 16 characters). Better from a Secret.
+#    value: ""
+# ATTACHMENTS_PASSPHRASE : Lets Admin Panel / Attachments / Encrypt encrypt the attachments on this server's disk (at least 16 characters); their addresses stay the same. Without it, encrypted attachments cannot be read: keep it somewhere other than the server.
 #  - name: "ATTACHMENTS_PASSPHRASE"
-#    valueFrom:
-#      secretKeyRef:
-#        name: wekan-attachments
-#        key: passphrase
-# ADMIN_AUDIT_RETENTION_DAYS : Days the administrators' audit log is kept.
-# Default 365; 0 keeps it; a HIPAA deployment sets 2190 or more.
+#    value: ""
+# ADMIN_AUDIT_RETENTION_DAYS : Days the administrators' audit log (Admin Panel / People / Audit log) is kept. Default 365; 0 keeps it; a HIPAA deployment sets 2190 or more.
 #  - name: "ADMIN_AUDIT_RETENTION_DAYS"
 #    value: "365"
-# AUDIT_LOG_STDOUT : json writes every audit log row, security problem and
-# data access also to standard output as one JSON line, for a SIEM.
+# AUDIT_LOG_STDOUT : Write every audit log row, security problem and data access also to standard output as one JSON line, for a SIEM. Off unless set to json.
 #  - name: "AUDIT_LOG_STDOUT"
 #    value: "json"
-# ACTIVITIES_RETENTION_DAYS : Days board activity rows are kept; off unless
-# set. The change history of cards is never removed.
+# ACTIVITIES_RETENTION_DAYS : Days board activity rows are kept; off unless set. The change history of cards is never removed.
 #  - name: "ACTIVITIES_RETENTION_DAYS"
-#    value: "730"
-# WORKLOAD_ABSENCE_RETENTION_DAYS : Days after its end a workload absence is
-# kept; off unless set. Absences can be health data.
+#    value: ""
+# WORKLOAD_ABSENCE_RETENTION_DAYS : Days after its end a workload absence is kept; off unless set. Absences can be health data.
 #  - name: "WORKLOAD_ABSENCE_RETENTION_DAYS"
-#    value: "365"
-# WORKLOAD_ABSENCE_TYPE_RECORDED : false stores every new workload absence as
-# "other", so no sick leave is recorded.
+#    value: ""
+# WORKLOAD_ABSENCE_TYPE_RECORDED : false stores every new workload absence as "other", so no sick leave is recorded.
 #  - name: "WORKLOAD_ABSENCE_TYPE_RECORDED"
-#    value: "false"
+#    value: ""
 # ---------------------------------------------------------------
 # ATTACHMENT RETENTION (models/lib/attachmentRetention.js). Off unless set.
 # ATTACHMENTS_RETENTION_DAYS : once a night, delete card attachments older
